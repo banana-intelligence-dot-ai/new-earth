@@ -1,0 +1,11 @@
+{
+  "name": "new-earth",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "robot": "node scripts/robot-times.mjs",
+    "test": "node test/bot.mjs 11",
+    "build": "rm -rf dist && mkdir dist && cp index.html robot.json og.png favicon.svg robots.txt sitemap.xml llms.txt dist/ && seolint"
+  },
+  "devDependencies": { "seolint": "1.1.1" }
+}

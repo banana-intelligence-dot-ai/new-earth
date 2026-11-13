@@ -2,10 +2,25 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050505">
-<title>New Earth</title>
-<meta name="description" content="Fly one rocket past one hundred gravity bodies, from Earth to a new one. Fastest time wins.">
+<title>New Earth: a rocket game. 100 bodies, beat the robot</title>
+<meta name="description" content="Fly one rocket past 100 moons, planets, stars and a black hole, from Earth to a new one. A new course every day. Beat the robot's time.">
+<link rel="canonical" href="https://new-earth-game.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="New Earth">
+<meta property="og:title" content="New Earth: 100 bodies, 3 ships, beat the robot">
+<meta property="og:description" content="Fly one rocket past 100 gravity bodies to a new Earth. A new course every day.">
+<meta property="og:url" content="https://new-earth-game.vercel.app/">
+<meta property="og:image" content="https://new-earth-game.vercel.app/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="A small rocket slingshots past a star toward New Earth.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="New Earth: 100 bodies, 3 ships, beat the robot">
+<meta name="twitter:description" content="Fly one rocket past 100 gravity bodies to a new Earth. A new course every day.">
+<meta name="twitter:image" content="https://new-earth-game.vercel.app/og.png">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
 :root{--bg:#050505;--ink:#f2f2f2;--dim:#7d7d7d;--line:#262626;--accent:#6fa8ff;
   --sans:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",Helvetica,Arial,sans-serif;
@@ -38,7 +53,9 @@ p.lead{color:var(--dim);font-size:16px;line-height:1.55;max-width:320px;margin:0
 button.go{margin-top:28px;height:52px;padding:0 34px;border-radius:26px;border:0;background:var(--ink);color:var(--bg);
   font:600 16px var(--sans);letter-spacing:-.01em;cursor:pointer;transition:transform .15s}
 button.go:active{transform:scale(.97)}
-button.go:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+.share{display:block;margin:14px auto 0;height:44px;padding:0 22px;border-radius:22px;border:1px solid #3a3a3a;background:none;color:var(--ink);font:500 14px var(--sans);cursor:pointer}
+.share:active{background:rgba(255,255,255,.08)}
 .keys{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--dim);line-height:1.8}
 .times{margin:30px auto 0;max-width:260px;border-top:1px solid var(--line);padding-top:16px;font-family:var(--mono);font-size:12px}
 .times h2{font-size:11px;font-weight:400;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;margin-bottom:10px}
@@ -52,6 +69,8 @@ button.go:focus-visible,input:focus-visible{outline:2px solid var(--accent);outl
 #brake{position:fixed;right:calc(22px + env(safe-area-inset-right));bottom:calc(34px + env(safe-area-inset-bottom));width:84px;height:84px;
   border-radius:50%;border:1px solid #555;background:rgba(255,255,255,.04);color:var(--ink);font:500 11px var(--mono);
   letter-spacing:.16em;display:none}
+#snd{position:fixed;z-index:5;top:calc(34px + env(safe-area-inset-top));right:8px;height:44px;padding:0 10px;border:0;background:none;color:var(--dim);font:500 11px var(--mono);letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+#snd b{color:var(--ink);font-weight:500}
 #brake.down{background:rgba(255,255,255,.18)}
 @media (pointer:coarse){#brake.show{display:block}.keys .kb{display:none}}
 @media (pointer:fine){.keys .tc{display:none}}
@@ -64,8 +83,9 @@ button.go:focus-visible,input:focus-visible{outline:2px solid var(--accent);outl
   <div><div id="clock">0:00.00</div><div id="sub"></div></div>
   <div id="count"><b>000</b> / 100</div>
 </div>
+<button id="snd" aria-pressed="true">Sound <b>on</b></button>
 <button id="brake" aria-label="Brake">BRAKE</button>
-<div id="overlay"><div class="card" id="card"></div></div>
+<div id="overlay"><div class="card" id="card"><div class="eyebrow">100 bodies &middot; 3 ships</div><h1>New Earth</h1><p class="lead">Fly past every moon, planet, star and one black hole. A new course every day. Beat the robot.</p></div></div>
 <script>
 /*SIM-START*/
 const W=900,THRUST=260,BRAKE=220,TURN=3.4,VMAX=620,SHIP_R=8,RANGE=900;
@@ -74,7 +94,7 @@ const lerp=(a,b,t)=>a+(b-a)*t,clamp=(v,a,b)=>v<a?a:v>b?b:v;
 const wrapX=x=>((x%W)+W)%W;
 function wdx(a,b){let d=(b-a)%W;if(d>W/2)d-=W;else if(d<-W/2)d+=W;return d}
 function wrapA(a){while(a>Math.PI)a-=2*Math.PI;while(a<-Math.PI)a+=2*Math.PI;return a}
-const TYPES={moon:{r:[16,28],gs:70},planet:{r:[36,60],gs:150},giant:{r:[70,95],gs:230},star:{r:[105,135],gs:340}};
+const TYPES={moon:{r:[16,28],gs:90},planet:{r:[36,60],gs:190},giant:{r:[70,95],gs:290},star:{r:[105,135],gs:420}};
 
 function makeLevel(seed){
   const R=rng(seed||11);
@@ -82,37 +102,39 @@ function makeLevel(seed){
   const rows=[],asteroids=[],did={};
   let n=0,y=0,prevR=120;
   const mk=(type,x,r)=>{const T=TYPES[type];r=r||lerp(T.r[0],T.r[1],R());
-    return{type,x:wrapX(x),y:0,R:r,gs:T.gs,infl:clamp(r*5,220,560),n:0,sats:[],seed:R()}};
-  const pick=d=>{const w={moon:1-d*.9,planet:.3+d*.6,giant:Math.max(0,d-.15)*1.1,star:Math.max(0,d-.3)*1.1};
+    return{type,x:wrapX(x),y:0,R:r,gs:T.gs,infl:clamp(r*5.5,240,600),n:0,sats:[],seed:R()}};
+  const pick=d=>{const w={moon:1-d,planet:.3+d*.6,giant:Math.max(0,d-.1)*1.2,star:Math.max(0,d-.2)*1.2};
     let tot=0;for(const k in w)tot+=w[k];let u=R()*tot;for(const k in w){u-=w[k];if(u<=0)return k}return'planet'};
   while(n<99){
     const d=n/99,left=99-n;let row,wide=1;
     if(n===0)row=[mk('moon',650,22)];
-    else if(n>=24&&!did.star){did.star=1;row=[mk('star',R()*W,110)];wide=1.3}
-    else if(n>=49&&!did.bin){did.bin=1;const x=R()*W;row=[mk('star',x,112),mk('star',x+450,112)];wide=1.7}
-    else if(n>=73&&!did.tri){did.tri=1;const x=R()*W;row=[mk('planet',x,46),mk('planet',x+300,46),mk('planet',x+600,46)];wide=1.5}
+    else if(n>=17&&!did.star){did.star=1;row=[mk('star',R()*W,110)];wide=1.3}
+    else if(n>=39&&!did.bin){did.bin=1;const x=R()*W;row=[mk('star',x,112),mk('star',x+450,112)];wide=1.7}
+    else if(n>=59&&!did.tri){did.tri=1;const x=R()*W;row=[mk('planet',x,46),mk('planet',x+300,46),mk('planet',x+600,46)];wide=1.5}
+    else if(n>=79&&!did.bin2){did.bin2=1;const x=R()*W;row=[mk('star',x,120),mk('star',x+450,120)];wide=1.6}
     else if(n>=97&&!did.fin&&left>=2){did.fin=1;const x=R()*W;row=[mk('star',x,125),mk('star',x+450,125)];wide=1.8}
-    else if(n>78&&left>=5&&R()<.14){const x=R()*W,r=38+R()*10;row=[mk('planet',x,r),mk('planet',x+300,r),mk('planet',x+600,r)];wide=1.4}
-    else if(n>12&&left>=5&&R()<.05+.42*d*d){
-      const minGap=lerp(210,130,d);let a,b,t=0;
+    else if(n>62&&left>=5&&R()<.18){const x=R()*W,r=38+R()*10;row=[mk('planet',x,r),mk('planet',x+300,r),mk('planet',x+600,r)];wide=1.4}
+    else if(n>12&&left>=5&&R()<.08+.5*d){
+      const minGap=lerp(190,115,d);let a,b,t=0;
       do{a=mk(pick(d),0);b=mk(pick(d),0);t++}while(410-a.R-b.R<minGap&&t<20);
       if(410-a.R-b.R<minGap){a=mk('planet',0,44);b=mk('planet',0,44)}
       const x=R()*W;a.x=wrapX(x);b.x=wrapX(x+450+(R()-.5)*80);row=[a,b];wide=1.35}
     else{const b=mk(pick(d),R()*W);
-      if(n>10&&(b.type==='planet'||b.type==='giant')&&R()<.16)
+      if(n>10&&(b.type==='planet'||b.type==='giant')&&R()<.3)
         b.sats.push({r:b.R+34+R()*28,a0:R()*6.283,w:(R()<.5?-1:1)*(.7+R()*.6),rad:6,kind:'sat'});
       row=[b]}
     const rowR=Math.max(...row.map(b=>b.R));
-    const gapY=lerp(380,175,d)*(.85+.3*R())*wide,top=y+prevR;
+    const gapY=lerp(340,140,d)*(.85+.3*R())*wide,top=y+prevR;
     y=top+gapY+rowR;
     row.forEach(b=>{b.y=y;b.n=++n;bodies.push(b)});
     rows.push({y,mid:top+gapY/2});
-    if(n>6&&R()<.1+.28*d)asteroids.push({x0:R()*W,y:top+gapY/2+(R()-.5)*gapY*.3,vx:(R()<.5?-1:1)*(40+R()*(60+60*d)),R:8+R()*9,seed:R()});
+    if(n>4&&R()<.18+.45*d)asteroids.push({x0:R()*W,y:top+gapY/2+(R()-.5)*gapY*.3,vx:(R()<.5?-1:1)*(50+R()*(80+90*d)),R:8+R()*9,seed:R()});
     prevR=rowR;
   }
   const top=y+prevR;y=top+520+34;
-  const hole={type:'hole',x:450,y,R:34,gs:30e6/(34*34),infl:900,n:100,sats:[],seed:.5};
-  for(let i=0;i<6;i++)hole.sats.push({r:400,a0:i*Math.PI/3,w:.42,rad:10,kind:'rock',seed:R()});
+  const hole={type:'hole',x:450,y,R:34,gs:36e6/(34*34),infl:900,n:100,sats:[],seed:.5};
+  for(let i=0;i<7;i++)hole.sats.push({r:400,a0:i*Math.PI*2/7,w:.42,rad:10,kind:'rock',seed:R()});
+  for(let i=0;i<4;i++)hole.sats.push({r:250,a0:i*Math.PI/2,w:-.7,rad:9,kind:'rock',seed:R()});
   bodies.push(hole);rows.push({y,mid:top+260});
   const home={type:'newearth',x:450,y:y+720,R:110,gs:0,infl:0,n:0,sats:[],seed:.81};
   bodies.push(home);
@@ -172,10 +194,18 @@ function step(L,S,inp,dt){
   return null}
 /*SIM-END*/
 
-if(typeof document!=='undefined'){(()=>{
+if(typeof document!=='undefined'){
+window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};
+const DAY=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York'}).format(new Date()),QSEED=+new URLSearchParams(location.search).get('seed')||0;
+fetch('robot.json').then(r=>r.json()).catch(()=>({})).then(j=>{
+  if(QSEED)return boot(QSEED,(j.seeds||{})[QSEED]||null);
+  const d=(j.days||{})[DAY];d?boot(d.seed,d.robot):boot(+DAY.replace(/-/g,''),null)});
+function boot(SEED,ROBOT){
+const track=n=>{try{window.va('event',{name:n})}catch(e){}};
+const COURSE=QSEED?'Course '+SEED:new Date(DAY+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})+' course';
 const $=id=>document.getElementById(id),cv=$('c'),ctx=cv.getContext('2d');
 const INK='#f2f2f2',BG='#050505',ACC='#6fa8ff';
-const L=makeLevel();let S=newState();
+const L=makeLevel(SEED);let S=newState();
 let cw=0,ch=0,sc=1,x0=0,line=0,camY=S.y,dpr=1;
 let mode='title',lives=3,paused=false,readyT=0,deadT=0,crashY=0,frags=[],trail=[],trailN=0,muted=false,lastTime=null;
 const input={turn:0,thrust:false,brake:false,aim:null},keys={};
@@ -206,14 +236,19 @@ function droidBeeps(){const f=[1900,2600,1400,3100,2200,900,2800,1700,2400];let 
   f.forEach((a,i)=>{const d=.07+(i%3)*.04;tone(a,f[(i+3)%f.length],t,d,.06,i%2?'square':'sine');t+=d+.03})}
 function winTune(){[392,523,659,784].forEach((f,i)=>tone(f,f,i*.16,.5,.07,'triangle'))}
 
+function setMuted(v){muted=v;try{localStorage.setItem('newearth.muted',v?'1':'')}catch(e){}
+  const b=$('snd');b.innerHTML='Sound <b>'+(v?'off':'on')+'</b>';b.setAttribute('aria-pressed',String(!v));if(v)thrustSound(false)}
+try{setMuted(localStorage.getItem('newearth.muted')==='1')}catch(e){}
+$('snd').onclick=e=>{audio();setMuted(!muted);e.currentTarget.blur()};
+
 /* ---------- scores ---------- */
-const KEY='newearth.times.v1';
+const KEY='newearth.times.v1'+(SEED===11?'':'.'+SEED);
 const loadTimes=()=>{try{return JSON.parse(localStorage.getItem(KEY))||[]}catch(e){return[]}};
 const saveTimes=t=>{try{localStorage.setItem(KEY,JSON.stringify(t))}catch(e){}};
 const fmt=s=>{const m=Math.floor(s/60),r=s-m*60;return m+':'+(r<10?'0':'')+r.toFixed(2)};
 const esc=s=>String(s).replace(/[^A-Z0-9]/gi,'').slice(0,3).toUpperCase();
 function timesHTML(mark){const t=loadTimes();if(!t.length)return'';
-  return'<div class="times"><h2>Fastest flights</h2><ol>'+t.map((r,i)=>
+  return'<div class="times"><h2>Fastest flights, '+COURSE.toLowerCase()+'</h2><ol>'+t.map((r,i)=>
     `<li class="${r===mark||(mark&&r.at===mark.at)?'me':''}"><span>${i+1}</span><span>${esc(r.name)||'---'}</span><span>${fmt(r.s)}</span></li>`).join('')+'</ol></div>'}
 
 /* ---------- screens ---------- */
@@ -222,25 +257,32 @@ function show(html){card.innerHTML=html;ov.classList.remove('off');hud.classList
 function hide(){ov.classList.add('off');hud.classList.remove('off');$('brake').classList.add('show')}
 const KEYS='<div class="keys"><span class="kb">&larr; &rarr; turn &nbsp;&middot;&nbsp; &uarr; engine &nbsp;&middot;&nbsp; &darr; brake<br>P pause &nbsp;&middot;&nbsp; M mute</span><span class="tc">Drag to steer. Push far to burn.</span></div>';
 function title(){mode='title';S=newState();camY=S.y;trail=[];
-  show(`<div class="eyebrow">100 bodies. 3 ships.</div><h1>New Earth</h1>
-  <p class="lead">Fly past every moon, planet, star and one black hole. Fastest flight wins.</p>
+  show(`<div class="eyebrow">${COURSE} &middot; 100 bodies &middot; 3 ships</div><h1>New Earth</h1>
+  <p class="lead">Fly past every moon, planet, star and one black hole. ${ROBOT?'The robot did it in '+ROBOT.toFixed(1)+'s.':'Fastest flight wins.'}</p>
   <button class="go" id="go">Launch</button>${KEYS}${timesHTML()}`);
   $('go').onclick=start}
-function start(){audio();S=newState();lives=3;mode='play';paused=false;readyT=0;trail=[];frags=[];camY=S.y;hide();drawLives();flash('Hold the engine to launch',2.4)}
+function start(){audio();track('launch');S=newState();lives=3;mode='play';paused=false;readyT=0;trail=[];frags=[];camY=S.y;hide();drawLives();flash('Hold the engine to launch',2.4)}
 function over(){mode='over';thrustSound(false);
   show(`<div class="eyebrow">Body ${S.passed} of 100</div><h1>Out of ships</h1>
   <p class="lead">Three ships lost. The flight starts again from Earth.</p>
   <button class="go" id="go">Launch again</button>${timesHTML()}`);
   $('go').onclick=start}
-function win(){mode='win';thrustSound(false);winTune();const s=S.t,t=loadTimes();
+function shareText(s){return'I reached New Earth in '+s.toFixed(1)+'s.'+(ROBOT?' The robot did '+ROBOT.toFixed(1)+'.':'')+' '+location.origin+location.pathname+'?ct=x-share'}
+function bindShare(s){const b=$('sh');if(!b)return;b.onclick=()=>{const text=shareText(s);track('share');
+  const ok=()=>{b.textContent='Copied';setTimeout(()=>{b.textContent='Copy result'},1600)};
+  const copy=()=>{if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(text).then(ok,old);else old()};
+  const old=()=>{const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;opacity:0;user-select:text;-webkit-user-select:text';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');ok()}catch(e){}ta.remove()};
+  if(navigator.share&&matchMedia('(pointer:coarse)').matches)navigator.share({text}).catch(()=>{});else copy()}}
+function win(){mode='win';thrustSound(false);winTune();track('finish');const s=S.t,t=loadTimes();
+  const SHARE=`<button class="share" id="sh">${navigator.share&&matchMedia('(pointer:coarse)').matches?'Share result':'Copy result'}</button>`;
   const makes=t.length<10||s<t[t.length-1].s,rec={name:'',s,at:Date.now()};
   const body=mark=>`<div class="eyebrow">New Earth reached${lives<3?' with '+lives+' ship'+(lives>1?'s':'')+' left':''}</div>
-    <h1 class="time">${fmt(s)}</h1><p class="lead">${!t.length||s<t[0].s?'The fastest flight on this device.':'One hundred bodies behind you.'}</p>`;
-  if(makes){show(body()+`<form class="entry" id="f"><input id="nm" maxlength="3" placeholder="AAA" autocomplete="off" autocapitalize="characters" aria-label="Your initials"><button class="go">Save</button></form>`);
+    <h1 class="time">${fmt(s)}</h1><p class="lead">${ROBOT?(s<ROBOT?'You beat the robot by '+(ROBOT-s).toFixed(1)+'s.':'The robot did '+ROBOT.toFixed(1)+'s. You are '+(s-ROBOT).toFixed(1)+'s behind.'):(!t.length||s<t[0].s?'The fastest flight on this device.':'One hundred bodies behind you.')}</p>`;
+  if(makes){show(body()+`<form class="entry" id="f"><input id="nm" maxlength="3" placeholder="AAA" autocomplete="off" autocapitalize="characters" aria-label="Your initials"><button class="go">Save</button></form>`+SHARE);bindShare(s);
     setTimeout(()=>$('nm')&&$('nm').focus(),400);
     $('f').onsubmit=e=>{e.preventDefault();rec.name=esc($('nm').value)||'YOU';const all=loadTimes();all.push(rec);all.sort((a,b)=>a.s-b.s);saveTimes(all.slice(0,10));done()}}
   else done();
-  function done(){show(body()+`<button class="go" id="go">Fly again</button>`+timesHTML(rec));$('go').onclick=start;mode='won'}}
+  function done(){show(body()+`<button class="go" id="go">Fly again</button>`+SHARE+timesHTML(rec));$('go').onclick=start;bindShare(s);mode='won'}}
 let subT=0;function flash(t,d){sub.textContent=t;sub.classList.add('on');subT=d||1.6}
 function drawLives(){let h='';for(let i=0;i<3;i++)h+=`<svg viewBox="0 0 11 14" class="${i<lives?'':'spent'}"><path d="M5.5 1 10 12 5.5 9.6 1 12Z"/></svg>`;$('lives').innerHTML=h}
 
@@ -250,16 +292,16 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const k=e.ke
   if(e.repeat)return;keys[k.toLowerCase()]=true;audio();
   if((k===' '||k==='Enter')&&(mode==='title'||mode==='over'||mode==='won'))start();
   if(k.toLowerCase()==='p'&&mode==='play'){paused=!paused;if(paused){flash('Paused',1e9);thrustSound(false)}else subT=0}
-  if(k.toLowerCase()==='m'){muted=!muted;flash(muted?'Sound off':'Sound on')}});
+  if(k.toLowerCase()==='m')setMuted(!muted)});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
 cv.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse')return;audio();if(stick.on)return;
-  stick.on=true;stick.id=e.pointerId;stick.ox=stick.x=e.clientX;stick.oy=stick.y=e.clientY;cv.setPointerCapture(e.pointerId)});
+  stick.on=true;stick.id=e.pointerId;stick.ox=stick.x=e.clientX;stick.oy=stick.y=e.clientY;try{cv.setPointerCapture(e.pointerId)}catch(_){}});
 cv.addEventListener('pointermove',e=>{if(stick.on&&e.pointerId===stick.id){stick.x=e.clientX;stick.y=e.clientY}});
 const endStick=e=>{if(e.pointerId===stick.id)stick.on=false};
 cv.addEventListener('pointerup',endStick);cv.addEventListener('pointercancel',endStick);
 const bk=$('brake');let bkDown=false;
-bk.addEventListener('pointerdown',e=>{e.preventDefault();bkDown=true;bk.classList.add('down');bk.setPointerCapture(e.pointerId)});
+bk.addEventListener('pointerdown',e=>{e.preventDefault();bkDown=true;bk.classList.add('down');try{bk.setPointerCapture(e.pointerId)}catch(_){}});
 const bkUp=()=>{bkDown=false;bk.classList.remove('down')};bk.addEventListener('pointerup',bkUp);bk.addEventListener('pointercancel',bkUp);
 addEventListener('contextmenu',e=>e.preventDefault());
 const SR=58;
@@ -381,8 +423,9 @@ function frame(now){requestAnimationFrame(frame);if(lastTime===null)lastTime=now
   const look=mode==='play'?clamp(S.vy*.22,-90,130):0;camY+=(S.y+look-camY)*Math.min(1,dt*6);
   render(S.t)}
 title();requestAnimationFrame(frame);
-window.__game={L,get S(){return S},get mode(){return mode},start};
-})()}
+window.__game={L,SEED,ROBOT,get S(){return S},get mode(){return mode},start};
+}}
 </script>
+<script defer src="/_vercel/insights/script.js"></script>
 </body>
 </html>

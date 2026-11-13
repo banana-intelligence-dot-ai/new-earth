@@ -1,0 +1,9 @@
+# New Earth
+
+> A free browser game. Fly one rocket from Earth past 100 gravity bodies (moons, planets, stars, one black hole) to a new Earth. Three ships. Fastest time wins. A new course every day, the same for everyone, with a robot pilot's time to beat.
+
+- Play: https://new-earth-game.vercel.app/
+- Today's robot time and the next days' course seeds: https://new-earth-game.vercel.app/robot.json
+- A fixed course: add ?seed=11 to the play link.
+- Best times are stored only in the player's browser. Nothing is collected.
+- Made by Banana Intelligence LLC.
