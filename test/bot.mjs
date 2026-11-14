@@ -2,7 +2,7 @@
 // Run: node test/bot.mjs [seed] [cruise] [horizon] [hold]   (exit 0 = reached New Earth)
 import fs from 'fs';
 import { fileURLToPath } from 'url';
-const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const html = fs.readFileSync(new URL('../classic/index.html', import.meta.url), 'utf8');
 const sim = html.split('/*SIM-START*/')[1].split('/*SIM-END*/')[0];
 const { makeLevel, newState, step, placeAt, spawnFor, wrapA } =
   new Function(sim + ';return{makeLevel,newState,step,placeAt,spawnFor,wrapA}')();

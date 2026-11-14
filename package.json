@@ -3,9 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "levels": "node scripts/make-levels.mjs 14 1 25 & node scripts/make-levels.mjs 14 26 50 & node scripts/make-levels.mjs 14 51 75 & node scripts/make-levels.mjs 14 76 100 & wait; node scripts/join-levels.mjs",
+    "test": "node test/solve.mjs && node test/bot.mjs 11",
     "robot": "node scripts/robot-times.mjs",
-    "test": "node test/bot.mjs 11",
-    "build": "rm -rf dist && mkdir dist && cp index.html robot.json og.png favicon.svg robots.txt sitemap.xml llms.txt dist/ && seolint"
+    "build": "rm -rf dist && mkdir -p dist/classic && cp index.html sim.js levels.js og.png favicon.svg robots.txt sitemap.xml llms.txt dist/ && cp classic/index.html classic/robot.json dist/classic/ && seolint"
   },
-  "devDependencies": { "seolint": "1.1.1" }
+  "devDependencies": {
+    "seolint": "1.1.1"
+  }
 }

@@ -1,10 +1,11 @@
 # New Earth
 
-A one-file browser game. Fly a rocket from Earth past 100 gravity bodies to a new Earth. Three ships. Fastest time wins.
+A browser game. Pull back, launch one rocket from Earth, and let gravity bend it to a new Earth. No steering. 100 levels.
 
-- **Play locally:** open `index.html`, or serve the folder (`python3 -m http.server`) so the robot's time loads.
-- **Today's course:** the seed is today's date in Eastern time, looked up in `robot.json`. Everyone gets the same course each day. `?seed=11` flies the original course.
-- **The robot's time:** `npm run robot` flies the robot pilot (`test/bot.mjs`, settings in `ROBOT`) over the next 45 days of courses and writes `robot.json`. A seed the robot cannot finish without losing a ship is skipped for the next one. Days past the end of the file still get a course, with no robot time shown. Re-run before the file runs out.
-- **Prove a course is beatable:** `node test/bot.mjs <seed>` (exit 0 means the robot reached New Earth).
+- **Play locally:** serve the folder (`python3 -m http.server`) and open it.
+- **Physics:** `sim.js`, shared by the page, the level maker and the test. Same gravity and step as the mini game on natepeace.com.
+- **Levels:** `npm run levels` writes `levels.js`. Each level is generated from its number, then kept only if the solver finds a safe winning shot. Difficulty is the size of the easiest winning window, in degrees of aim: about 8 at level 1 down to about 1 at level 100. Along the way: more bodies, heavier pull, moving planets (level 26), smaller targets, shots that must swing around a world (level 66), a black hole (level 100).
+- **Prove every level is winnable:** `npm test`. It flies every shot on a grid for all 100 levels and fails if any level has no safe shot (one that still wins half a degree or one power point off).
+- **Classic mode:** `classic/` is the first version, where you fly the rocket yourself against a robot's time. `npm run robot` refreshes `classic/robot.json`.
 - **Build:** `npm run build` copies the site into `dist/` and runs seolint. Errors fail the build.
-- **Data:** best times live in the player's browser only. Analytics is Vercel's cookieless page counter plus three plain event names (launch, finish, share).
+- **Data:** progress and best tries live in the player's browser only. Analytics is Vercel's cookieless page counter plus plain event names (launch, win, finish, share).

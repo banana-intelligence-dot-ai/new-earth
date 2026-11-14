@@ -25,4 +25,4 @@ for (let i = 0; i < days; i++, d.setUTCDate(d.getUTCDate() + 1)) {
   console.log(day, done ? JSON.stringify(out.days[day]) : 'NO COURSE FOUND');
   if (!done) process.exitCode = 1;
 }
-fs.writeFileSync(new URL('../robot.json', import.meta.url), JSON.stringify(out, null, 1) + '\n');
+fs.writeFileSync(new URL('../classic/robot.json', import.meta.url), JSON.stringify(out, null, 1) + '\n');
