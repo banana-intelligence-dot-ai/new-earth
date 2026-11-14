@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#050505">
-<title>New Earth: a gravity slingshot game with 10 levels</title>
-<meta name="description" content="Pull back, let go, and let gravity bend one rocket from Earth to a new one. No steering. 10 levels that get harder. Free, in your browser.">
+<title>New Earth: a gravity slingshot game with 100 levels</title>
+<meta name="description" content="Pull back, let go, and let gravity bend one rocket from Earth to a new one. No steering. 100 levels that get harder. Free, in your browser.">
 <link rel="canonical" href="https://new-earth-omega.vercel.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="New Earth">
-<meta property="og:title" content="New Earth: one launch, no steering, 10 levels">
+<meta property="og:title" content="New Earth: one launch, no steering, 100 levels">
 <meta property="og:description" content="Pull back, let go, and let gravity bend your rocket to New Earth.">
 <meta property="og:url" content="https://new-earth-omega.vercel.app/">
 <meta property="og:image" content="https://new-earth-omega.vercel.app/og.png">
@@ -17,7 +17,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="A small rocket slingshots past a star toward New Earth.">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="New Earth: one launch, no steering, 10 levels">
+<meta name="twitter:title" content="New Earth: one launch, no steering, 100 levels">
 <meta name="twitter:description" content="Pull back, let go, and let gravity bend your rocket to New Earth.">
 <meta name="twitter:image" content="https://new-earth-omega.vercel.app/og.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -86,7 +86,7 @@ dialog .row button{border:1px solid var(--line);padding:0 18px}
 <main>
   <header>
     <h1>New Earth</h1>
-    <p class="hud" id="lvl">Level <b>1</b> of 10</p>
+    <p class="hud" id="lvl">Level <b>1</b> of 100</p>
     <p class="hud" id="tries">Tries <b>0</b></p>
   </header>
   <div id="stage">
@@ -132,7 +132,7 @@ dialog .row button{border:1px solid var(--line);padding:0 18px}
 (() => {
 const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d');
-const KEY = 'newearth.sling.v2', SITE = 'https://new-earth-omega.vercel.app/';
+const KEY = 'newearth.sling.v1', SITE = 'https://new-earth-omega.vercel.app/';
 const reduced = matchMedia('(prefers-reduced-motion: reduce)');
 const SPEED = 1.2, PULL = 2.2;           // flight plays a little faster than real time; pull distance to launch speed
 const TOTAL = LEVELS.length;
@@ -168,6 +168,17 @@ const sfx = {
 let n = 1, L, ang = 0, pow = 100, tries = 0, mode = 'aim';   // aim | fly | wait | won
 let S = null, trail = [], ghost = [], mark = null, drag = null, raf = 0, last = 0, acc = 0, launched = false;
 const aims = {};
+const INTRO = {
+  1: 'Leave old Earth. Reach New Earth. 100 levels, one launch each. Pull the rocket back and let go.',
+  2: 'Gravity bends the path. Miss, then change the angle a little.',
+  6: 'Two worlds now. Each one pulls.',
+  11: 'More worlds, more pull.',
+  26: 'Some planets move now. They start when you launch.',
+  46: 'Four worlds and a smaller target.',
+  66: 'No straight shot from here. Swing around.',
+  86: 'Everything at once.',
+  100: 'A black hole sits in the way. Last one.',
+};
 const HOW = matchMedia('(pointer: coarse)').matches
   ? 'Pull back from the rocket and let go. Fine tune with the buttons.'
   : 'Drag back and let go, or use the arrow keys and Space.';
@@ -198,7 +209,7 @@ function load(k) {
   [ang, pow] = aims[n] || L.aim; tries = 0; mode = 'aim'; S = null; trail = []; ghost = []; mark = null; drag = null;
   stars = makeStars(n);
   $('won').classList.remove('on');
-  setNote(L.note || HOW, !L.note);   // a level may carry its own opening line
+  setNote(INTRO[n] || HOW, !INTRO[n]);
   try { history.replaceState(null, '', n > 1 ? '?level=' + n : location.pathname); } catch {}
   hud(); draw();
 }
