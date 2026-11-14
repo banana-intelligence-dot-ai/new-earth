@@ -38,7 +38,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 #lives svg{width:11px;height:14px;stroke:var(--ink);fill:none;stroke-width:1.4}
 #lives svg.spent{stroke:var(--line)}
 #clock{font-size:26px;letter-spacing:.02em;color:var(--ink);font-variant-numeric:tabular-nums;text-align:center;line-height:1}
-#sub{margin-top:7px;text-align:center;min-height:14px;color:var(--ink);opacity:0;transition:opacity .3s}
+#sub{margin-top:9px;text-align:center;min-height:14px;line-height:1.7;white-space:nowrap;color:var(--ink);opacity:0;transition:opacity .3s}
 #sub.on{opacity:1}
 #count{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 #count b{color:var(--ink);font-weight:500}
@@ -85,7 +85,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 </div>
 <button id="snd" aria-pressed="true">Sound <b>on</b></button>
 <button id="brake" aria-label="Brake">BRAKE</button>
-<div id="overlay"><div class="card" id="card"><div class="eyebrow">100 bodies &middot; 3 ships</div><h1>New Earth</h1><p class="lead">Fly past every moon, planet, star and one black hole. A new course every day. Beat the robot.</p></div></div>
+<div id="overlay"><div class="card" id="card"><div class="eyebrow">100 bodies &middot; 3 ships</div><h1>New Earth</h1><p class="lead">Fly from Earth to New Earth. Get past 100 moons, planets, suns and one black hole. A new course every day. Beat the robot.</p></div></div>
 <script>
 /*SIM-START*/
 const W=900,THRUST=260,BRAKE=220,TURN=3.4,VMAX=620,SHIP_R=8,RANGE=900;
@@ -99,21 +99,21 @@ const TYPES={moon:{r:[16,28],gs:90},planet:{r:[36,60],gs:190},giant:{r:[70,95],g
 function makeLevel(seed){
   const R=rng(seed||11);
   const bodies=[{type:'earth',x:450,y:0,R:120,gs:90,infl:420,n:0,sats:[],seed:.37}];
-  const rows=[],asteroids=[],did={};
+  const rows=[],asteroids=[],callouts=[],did={};
   let n=0,y=0,prevR=120;
   const mk=(type,x,r)=>{const T=TYPES[type];r=r||lerp(T.r[0],T.r[1],R());
     return{type,x:wrapX(x),y:0,R:r,gs:T.gs,infl:clamp(r*5.5,240,600),n:0,sats:[],seed:R()}};
   const pick=d=>{const w={moon:1-d,planet:.3+d*.6,giant:Math.max(0,d-.1)*1.2,star:Math.max(0,d-.2)*1.2};
     let tot=0;for(const k in w)tot+=w[k];let u=R()*tot;for(const k in w){u-=w[k];if(u<=0)return k}return'planet'};
   while(n<99){
-    const d=n/99,left=99-n;let row,wide=1;
+    const d=n/99,left=99-n;let row,wide=1,say=null;
     if(n===0)row=[mk('moon',650,22)];
-    else if(n>=17&&!did.star){did.star=1;row=[mk('star',R()*W,110)];wide=1.3}
-    else if(n>=39&&!did.bin){did.bin=1;const x=R()*W;row=[mk('star',x,112),mk('star',x+450,112)];wide=1.7}
-    else if(n>=59&&!did.tri){did.tri=1;const x=R()*W;row=[mk('planet',x,46),mk('planet',x+300,46),mk('planet',x+600,46)];wide=1.5}
-    else if(n>=79&&!did.bin2){did.bin2=1;const x=R()*W;row=[mk('star',x,120),mk('star',x+450,120)];wide=1.6}
-    else if(n>=97&&!did.fin&&left>=2){did.fin=1;const x=R()*W;row=[mk('star',x,125),mk('star',x+450,125)];wide=1.8}
-    else if(n>62&&left>=5&&R()<.18){const x=R()*W,r=38+R()*10;row=[mk('planet',x,r),mk('planet',x+300,r),mk('planet',x+600,r)];wide=1.4}
+    else if(n>=17&&!did.star){did.star=1;row=[mk('star',R()*W,110)];wide=1.3;say='First sun ahead'}
+    else if(n>=39&&!did.bin){did.bin=1;const x=R()*W;row=[mk('star',x,112),mk('star',x+450,112)];wide=1.7;say='Twin suns ahead'}
+    else if(n>=59&&!did.tri){did.tri=1;const x=R()*W;row=[mk('star',x,60),mk('star',x+300,60),mk('star',x+600,60)];wide=1.8;say='Three suns ahead'}
+    else if(n>=79&&!did.bin2){did.bin2=1;const x=R()*W;row=[mk('star',x,112),mk('star',x+450,112)];wide=1.7;say='Twin suns ahead'}
+    else if(n>=97&&!did.fin&&left>=2){did.fin=1;const x=R()*W;row=[mk('star',x,105),mk('star',x+450,105)];wide=2;say='Last suns ahead'}
+    else if(n>62&&left>=5&&R()<.18){const x=R()*W,r=38+R()*10;row=[mk('planet',x,r),mk('planet',x+300,r),mk('planet',x+600,r)];wide=1.5;say='Three planets ahead'}
     else if(n>12&&left>=5&&R()<.08+.5*d){
       const minGap=lerp(190,115,d);let a,b,t=0;
       do{a=mk(pick(d),0);b=mk(pick(d),0);t++}while(410-a.R-b.R<minGap&&t<20);
@@ -124,21 +124,21 @@ function makeLevel(seed){
         b.sats.push({r:b.R+34+R()*28,a0:R()*6.283,w:(R()<.5?-1:1)*(.7+R()*.6),rad:6,kind:'sat'});
       row=[b]}
     const rowR=Math.max(...row.map(b=>b.R));
-    const gapY=lerp(340,140,d)*(.85+.3*R())*wide,top=y+prevR;
+    const gapY=lerp(340,175,d)*(.85+.3*R())*wide,top=y+prevR;
     y=top+gapY+rowR;
     row.forEach(b=>{b.y=y;b.n=++n;bodies.push(b)});
-    rows.push({y,mid:top+gapY/2});
-    if(n>4&&R()<.18+.45*d)asteroids.push({x0:R()*W,y:top+gapY/2+(R()-.5)*gapY*.3,vx:(R()<.5?-1:1)*(50+R()*(80+90*d)),R:8+R()*9,seed:R()});
+    rows.push({y,mid:top+gapY/2});if(say)callouts.push({y:top-120,text:say});
+    if(n>4&&R()<(d<.65?.18+.45*d:.08))asteroids.push({x0:R()*W,y:top+gapY/2+(R()-.5)*gapY*.3,vx:(R()<.5?-1:1)*(50+R()*(80+90*d)),R:8+R()*9,seed:R()});
     prevR=rowR;
   }
-  const top=y+prevR;y=top+520+34;
-  const hole={type:'hole',x:450,y,R:34,gs:36e6/(34*34),infl:900,n:100,sats:[],seed:.5};
-  for(let i=0;i<7;i++)hole.sats.push({r:400,a0:i*Math.PI*2/7,w:.42,rad:10,kind:'rock',seed:R()});
-  for(let i=0;i<4;i++)hole.sats.push({r:250,a0:i*Math.PI/2,w:-.7,rad:9,kind:'rock',seed:R()});
-  bodies.push(hole);rows.push({y,mid:top+260});
+  const top=y+prevR;y=top+600+34;
+  const hole={type:'hole',x:450,y,R:34,gs:14e6/(34*34),infl:900,n:100,sats:[],seed:.5};
+  for(let i=0;i<3;i++)hole.sats.push({r:400,a0:i*Math.PI*2/3,w:.3,rad:10,kind:'rock',seed:R()});
+  callouts.push({y:hole.y-1000,text:'Black hole ahead'},{y:hole.y+260,text:'New Earth ahead'});
+  bodies.push(hole);rows.push({y,mid:top+300});
   const home={type:'newearth',x:450,y:y+720,R:110,gs:0,infl:0,n:0,sats:[],seed:.81};
   bodies.push(home);
-  const L={bodies,asteroids,ys:bodies.map(b=>b.y),numbered:bodies.filter(b=>b.n>0),hole,home,length:home.y};
+  const L={bodies,asteroids,callouts,ys:bodies.map(b=>b.y),numbered:bodies.filter(b=>b.n>0),hole,home,length:home.y};
   L.spawns=[{trig:-1e9,start:true}];
   for(const r of rows){let best=0,bx=450;
     for(let i=0;i<36;i++){const x=i*25+12;let m=1e9;
@@ -258,13 +258,13 @@ function hide(){ov.classList.add('off');hud.classList.remove('off');$('brake').c
 const KEYS='<div class="keys"><span class="kb">&larr; &rarr; turn &nbsp;&middot;&nbsp; &uarr; engine &nbsp;&middot;&nbsp; &darr; brake<br>P pause &nbsp;&middot;&nbsp; M mute</span><span class="tc">Drag to steer. Push far to burn.</span></div>';
 function title(){mode='title';S=newState();camY=S.y;trail=[];
   show(`<div class="eyebrow">${COURSE} &middot; 100 bodies &middot; 3 ships</div><h1>New Earth</h1>
-  <p class="lead">Fly past every moon, planet, star and one black hole. ${ROBOT?'The robot did it in '+ROBOT.toFixed(1)+'s.':'Fastest flight wins.'}</p>
+  <p class="lead">Fly from Earth to New Earth. Get past 100 moons, planets, suns and one black hole. ${ROBOT?'The robot did it in '+ROBOT.toFixed(1)+'s.':'Fastest flight wins.'}</p>
   <button class="go" id="go">Launch</button>${KEYS}${timesHTML()}`);
   $('go').onclick=start}
-function start(){audio();track('launch');S=newState();lives=3;mode='play';paused=false;readyT=0;trail=[];frags=[];camY=S.y;hide();drawLives();flash('Hold the engine to launch',2.4)}
+function start(){audio();track('launch');S=newState();lives=3;mode='play';paused=false;readyT=0;trail=[];frags=[];camY=S.y;hide();drawLives();callI=0;mission=true;flash(MISSION,1e9)}
 function over(){mode='over';thrustSound(false);
   show(`<div class="eyebrow">Body ${S.passed} of 100</div><h1>Out of ships</h1>
-  <p class="lead">Three ships lost. The flight starts again from Earth.</p>
+  <p class="lead">Three ships lost. Start again from Earth, get past 100 bodies, and reach New Earth.</p>
   <button class="go" id="go">Launch again</button>${timesHTML()}`);
   $('go').onclick=start}
 function shareText(s){return'I reached New Earth in '+s.toFixed(1)+'s.'+(ROBOT?' The robot did '+ROBOT.toFixed(1)+'.':'')+' '+location.origin+location.pathname+'?ct=x-share'}
@@ -283,7 +283,7 @@ function win(){mode='win';thrustSound(false);winTune();track('finish');const s=S
     $('f').onsubmit=e=>{e.preventDefault();rec.name=esc($('nm').value)||'YOU';const all=loadTimes();all.push(rec);all.sort((a,b)=>a.s-b.s);saveTimes(all.slice(0,10));done()}}
   else done();
   function done(){show(body()+`<button class="go" id="go">Fly again</button>`+SHARE+timesHTML(rec));$('go').onclick=start;bindShare(s);mode='won'}}
-let subT=0;function flash(t,d){sub.textContent=t;sub.classList.add('on');subT=d||1.6}
+let subT=0;function flash(t,d){sub.innerHTML=t;sub.classList.add('on');subT=d||1.6}
 function drawLives(){let h='';for(let i=0;i<3;i++)h+=`<svg viewBox="0 0 11 14" class="${i<lives?'':'spent'}"><path d="M5.5 1 10 12 5.5 9.6 1 12Z"/></svg>`;$('lives').innerHTML=h}
 
 /* ---------- input ---------- */
@@ -291,7 +291,7 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;const k=e.ke
   if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(k))e.preventDefault();
   if(e.repeat)return;keys[k.toLowerCase()]=true;audio();
   if((k===' '||k==='Enter')&&(mode==='title'||mode==='over'||mode==='won'))start();
-  if(k.toLowerCase()==='p'&&mode==='play'){paused=!paused;if(paused){flash('Paused',1e9);thrustSound(false)}else subT=0}
+  if(k.toLowerCase()==='p'&&mode==='play'){paused=!paused;if(paused){flash('Paused',1e9);thrustSound(false)}else subT=.01}
   if(k.toLowerCase()==='m')setMuted(!muted)});
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
@@ -401,7 +401,9 @@ function render(t){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=BG;ctx.fillRe
     ctx.fillStyle='rgba(255,255,255,.5)';circle(stick.x,stick.y,15);ctx.fill()}}
 
 /* ---------- loop ---------- */
-const STEP=1/120;let acc=0,hadDroid=false,lastPassed=-1;
+const MISSION='From Earth to New Earth. Get past 100 bodies.<br>'+(matchMedia('(pointer:coarse)').matches?'Push the stick up to launch.':'Hold the up arrow to launch.');
+const setCall=()=>{callI=0;while(callI<L.callouts.length&&L.callouts[callI].y<S.y-250)callI++};
+let callI=0,mission=false;const STEP=1/120;let acc=0,hadDroid=false,lastPassed=-1;
 function crash(){boom();thrustSound(false);crashY=S.y;lives--;drawLives();mode='dead';deadT=1.25;
   for(let i=0;i<14;i++){const a=Math.random()*6.28,v=40+Math.random()*150;frags.push({x:S.x,y:S.y,vx:Math.cos(a)*v+S.vx*.25,vy:Math.sin(a)*v+S.vy*.25,r:a,w:(Math.random()-.5)*9,s:3+Math.random()*6,l:1})}
   flash(lives>0?(lives===1?'Last ship':lives+' ships left'):'',1.3)}
@@ -414,10 +416,12 @@ function frame(now){requestAnimationFrame(frame);if(lastTime===null)lastTime=now
     if(S.droid&&!hadDroid)droidBeeps();hadDroid=!!S.droid;
     if(!S.landed&&++trailN%3===0){trail.push({x:S.x,y:S.y});if(trail.length>46)trail.shift()}
     if(S.passed!==lastPassed){lastPassed=S.passed;$('count').innerHTML='<b>'+String(S.passed).padStart(3,'0')+'</b> / 100';
-      if(S.passed===99&&mode==='play')flash('Black hole ahead',2.6)}
+      }
+    while(callI<L.callouts.length&&L.callouts[callI].y<S.y)flash(L.callouts[callI++].text,3);
+    if(mission&&!S.landed){mission=false;subT=.01}
     $('clock').textContent=fmt(S.t)}
   else if(mode==='dead'){deadT-=dt;if(deadT<=0){frags=[];trail=[];
-    if(lives>0){placeAt(L,S,spawnFor(L,crashY));mode='play';readyT=.7;acc=0}else over()}}
+    if(lives>0){placeAt(L,S,spawnFor(L,crashY));setCall();if(S.landed){mission=true;flash(MISSION,1e9)}mode='play';readyT=.7;acc=0}else over()}}
   for(const f of frags){f.x+=f.vx*dt;f.y+=f.vy*dt;f.r+=f.w*dt;f.l-=dt*.85}
   if(subT>0&&subT<1e8){subT-=dt;if(subT<=0)sub.classList.remove('on')}
   const look=mode==='play'?clamp(S.vy*.22,-90,130):0;camY+=(S.y+look-camY)*Math.min(1,dt*6);
