@@ -1,6 +1,6 @@
 # New Earth
 
-> A free browser game. Pull back and launch one rocket from Earth, with no steering, and let the gravity of moons, planets and suns bend its path to a new Earth. 100 levels that get harder: more bodies, heavier pull, moving planets, smaller targets, shots that must swing around a world, and a black hole at the end.
+> A free browser game. Pull back and launch one rocket from Earth, with no steering, and let the gravity of moons, planets and suns bend its path to a new Earth. 10 levels that get harder: more bodies, heavier pull, moving planets, smaller targets, a shot that must swing around a world, and a black hole at the end. More levels will be added.
 
 - Play: https://new-earth-omega.vercel.app/
 - Classic mode, where you fly the rocket yourself past 100 bodies against a robot's time: https://new-earth-omega.vercel.app/classic/
