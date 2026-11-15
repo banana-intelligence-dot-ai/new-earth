@@ -1,10 +1,11 @@
 // Proves every level can be won. For each of the 100 levels the solver flies every shot on a grid
 // (angle by half a degree, power by 2.5) and must find a safe shot: one that wins, and still wins
 // half a degree either side and one power point either side. Exit 0 = all 100 winnable.
+// No level may have a straight shot: with gravity switched off, nothing on the grid reaches New Earth.
 // Also checks the physics against the natepeace.com card: its default aim misses, (90, -32) wins.
 // Run: node test/solve.mjs
 import fs from 'fs';
-import { LEVEL1 as CARD, plan } from '../scripts/make-levels.mjs';
+import { LEVEL1 as CARD, plan, straight } from '../scripts/make-levels.mjs';
 const read = f => fs.readFileSync(new URL('../' + f, import.meta.url), 'utf8');
 const { fly, solve, LEVELS, PMIN, PMAX } = new Function(read('sim.js') + read('levels.js') + ';return{fly,solve,LEVELS,PMIN,PMAX}')();
 
@@ -22,6 +23,7 @@ LEVELS.forEach((L, i) => {
   if (!sv.best) return fail(`level ${n}: no safe winning shot`);
   if (fly(L, sv.best.ang, sv.best.pow).r !== 'win') fail(`level ${n}: safe shot did not win on replay`);
   if (fly(L, L.aim[0], L.aim[1]).r === 'win') fail(`level ${n}: the starting aim already wins`);
+  if (straight(L)) fail(`level ${n}: a straight shot wins with gravity off`);
   if (L.aim[1] < PMIN || L.aim[1] > PMAX) fail(`level ${n}: starting power out of range`);
   if (L.t.r !== P.targetR) fail(`level ${n}: target size ${L.t.r}, plan says ${P.targetR}`);
   if (L.b.filter(b => b.o).length !== P.movers) fail(`level ${n}: wrong number of moving bodies`);

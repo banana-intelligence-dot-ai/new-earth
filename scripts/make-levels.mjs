@@ -2,7 +2,8 @@
 // Run: npm run levels   (four parts in parallel, then joined into levels.js)
 // LEVEL1 below is the layout from the natepeace.com card, kept to prove the physics match it.
 // The 100 levels are generated from the level number, so the file is the same every run. Difficulty is set by how small a share of all
-// the widest winning window is, in degrees of aim: 8 at level 1 down to 1 at level 100.
+// the widest winning window is, in degrees of aim: 5 at level 1 down to 1 at level 100.
+// Every level has a world on the line from Earth to New Earth, so no straight shot wins: see straight().
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 const src = fs.readFileSync(new URL('../sim.js', import.meta.url), 'utf8');
@@ -25,11 +26,19 @@ export function plan(n) {
   return {
     bodies: n < 6 ? 1 : n < 11 ? 2 : n < 26 ? 2 + (n % 2) : n < 46 ? 3 : n < 66 ? 4 : n < 86 ? 3 + (n % 2) : 4,
     movers: n < 26 ? 0 : n < 46 ? 1 : n < 66 ? 1 + (n % 2) : n < 86 ? n % 2 : 1 + (n % 2),
-    blocker: n >= 66,
+    blocker: true,
     targetR: Math.round(22 - 11 * f),
     mu: 1 + 0.6 * f,
-    width: 8 * Math.pow(1 / 8, f),   // widest winning window, in degrees: 8 at level 1, 1 at level 100
+    width: 5 * Math.pow(1 / 5, f),   // widest winning window, in degrees: 5 at level 1, 1 at level 100
   };
+}
+// True if some shot wins with gravity switched off, which means a straight line reaches New Earth.
+// Bodies stay solid and movers keep moving. Checks every power, and every half degree within 30 of the direct line.
+export function straight(L) {
+  const flat = { ...L, b: L.b.map(o => ({ ...o, mu: 0 })) };
+  const dir = Math.round(Math.atan2(-(L.t.y - L.s.y), L.t.x - L.s.x) * 360 / Math.PI) / 2;
+  for (let a = dir - 30; a <= dir + 30; a += 0.5) for (let p = 40; p <= 150; p += 2.5) if (fly(flat, a, p).r === 'win') return true;
+  return false;
 }
 const KIND = { moon: [7, 10, 7000, 11000], planet: [12, 17, 16000, 28000], sun: [18, 22, 30000, 40000] };
 function make(kind, x, y, R, scale) {
@@ -54,7 +63,7 @@ function candidate(n, k) {
     return true;
   };
   if (P.blocker) {
-    const u = 0.42 + R() * 0.2, kind = n === 100 ? 'hole' : R() < 0.5 ? 'sun' : 'planet';
+    const u = 0.36 + R() * 0.28, kind = n === 100 ? 'hole' : R() < 0.5 ? 'sun' : 'planet';
     const c = kind === 'hole' ? { x: r1(s.x + dx * u), y: r1(s.y + dy * u), r: 9, mu: 90000, type: 'hole' } : make(kind, s.x + (t.x - s.x) * u, s.y + (t.y - s.y) * u, R, P.mu);
     if (kind !== 'hole') c.r = Math.max(c.r, 15);
     b.push(c);
@@ -93,6 +102,7 @@ for (let n = from; n <= to; n++) {
   for (let k = 0, kept = 0; kept < K && k < K * 40; k++) {
     const L = candidate(n, k); if (!L) continue;
     if (fly(L, L.aim[0], L.aim[1]).r === 'win') continue;      // the first, obvious shot must miss
+    if (straight(L)) continue;                                 // and no straight line may reach New Earth
     const sv = solve(L); if (!sv.best) continue;
     kept++;
     const miss = Math.abs(Math.log(sv.width / P.width));

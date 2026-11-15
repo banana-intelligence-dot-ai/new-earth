@@ -169,13 +169,12 @@ let n = 1, L, ang = 0, pow = 100, tries = 0, mode = 'aim';   // aim | fly | wait
 let S = null, trail = [], ghost = [], mark = null, drag = null, raf = 0, last = 0, acc = 0, launched = false;
 const aims = {};
 const INTRO = {
-  1: 'Leave old Earth. Reach New Earth. 100 levels, one launch each. Pull the rocket back and let go.',
-  2: 'Gravity bends the path. Miss, then change the angle a little.',
+  1: 'Reach New Earth. A world sits in the way, so no straight shot works. Pull the rocket back, let go, and let gravity bend it around.',
+  2: 'Aim to one side of the world in the way. Its pull swings you around it.',
   6: 'Two worlds now. Each one pulls.',
   11: 'More worlds, more pull.',
   26: 'Some planets move now. They start when you launch.',
   46: 'Four worlds and a smaller target.',
-  66: 'No straight shot from here. Swing around.',
   86: 'Everything at once.',
   100: 'A black hole sits in the way. Last one.',
 };
