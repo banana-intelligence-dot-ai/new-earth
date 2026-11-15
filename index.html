@@ -27,19 +27,22 @@
   --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
 *{box-sizing:border-box;margin:0;padding:0}
 html{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
-body{min-height:100dvh;display:flex;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px 32px}
-main{width:100%;max-width:min(1040px,calc((100dvh - 250px) * 1.44));min-width:min(100%,328px)}
-header{display:flex;align-items:baseline;gap:16px;margin-bottom:10px}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+/* The game fills the whole screen: the canvas covers it, and the header and controls sit on top. */
+header{position:fixed;z-index:2;top:0;left:0;right:0;display:flex;align-items:baseline;gap:16px;pointer-events:none;
+  padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 8px max(16px,env(safe-area-inset-left))}
+#ui{position:fixed;z-index:2;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;
+  padding:10px max(16px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+  background:linear-gradient(to top,rgba(5,5,5,.96) 70%,rgba(5,5,5,0))}
 h1{font-size:15px;font-weight:600;letter-spacing:.22em;text-transform:uppercase}
 .hud{font-family:var(--mono);font-size:13px;color:var(--dim);font-variant-numeric:tabular-nums;white-space:nowrap}
 .hud b{color:var(--ink);font-weight:500}
 #tries{margin-left:auto}
-#stage{position:relative;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#000}
-canvas{display:block;width:100%;aspect-ratio:360/250;cursor:crosshair;outline:none}
+canvas{position:fixed;inset:0;display:block;width:100%;height:100%;cursor:crosshair;outline:none;touch-action:none;background:#000}
 canvas:focus-visible{box-shadow:inset 0 0 0 2px var(--new)}
-#note{min-height:2.9em;margin:12px 2px 10px;font-size:16px;line-height:1.45;color:var(--ink)}
+#note{flex:1 1 260px;min-height:2.9em;font-size:16px;line-height:1.45;color:var(--ink);display:flex;align-items:center}
 #note.dim{color:var(--dim)}
-#controls{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:stretch}
+#controls{flex:1 1 420px;max-width:560px;display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:stretch}
 .dial{display:grid;grid-template-columns:44px 1fr 44px;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--panel);min-width:0}
 .dial output{text-align:center;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--dim);white-space:nowrap;overflow:hidden}
 .dial output b{display:block;color:var(--ink);font-weight:500;font-size:15px}
@@ -50,11 +53,10 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--new);outline-offset
 #go{background:var(--sun);color:#111;font-weight:600;font-size:16px;padding:0 26px;letter-spacing:.01em}
 #go:active{transform:translateY(1px)}
 #go.flying{background:none;color:var(--ink);border:1px solid var(--line)}
-nav{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:14px;align-items:center}
+nav{display:flex;flex-wrap:wrap;gap:0 2px;align-items:center}
 nav button,nav a{font-size:14px;color:var(--dim);padding:0 12px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;border-radius:10px}
 nav button:hover,nav a:hover{color:var(--ink)}
-nav .sp{margin-left:auto}
-#won{position:absolute;inset:auto 0 0 0;padding:16px;display:none;gap:12px;align-items:center;flex-wrap:wrap;
+#won{position:fixed;z-index:3;left:var(--fx,0);width:var(--fw,100%);top:calc(var(--fy,0px) + var(--fh,100%));transform:translateY(-100%);padding:16px;display:none;gap:12px;align-items:center;flex-wrap:wrap;
   background:linear-gradient(to top,rgba(0,0,0,.94) 60%,rgba(0,0,0,0))}
 #won.on{display:flex}
 #won p{font-size:17px;font-weight:600;margin-right:auto}
@@ -74,17 +76,30 @@ dialog .row{display:flex;justify-content:flex-end;margin-top:16px}
 dialog .row button{border:1px solid var(--line);padding:0 18px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 @media (max-width:520px){
-  #controls{grid-template-columns:1fr 1fr}
+  #ui{gap:6px}
+  #note{flex-basis:100%;font-size:15px}
+  #controls{flex-basis:100%;max-width:none;grid-template-columns:1fr 1fr}
   #go{grid-column:1/-1;min-height:52px}
-  #note{font-size:15px}
+  nav{width:100%;justify-content:space-between}
   header{gap:10px}
   h1{font-size:13px;letter-spacing:.18em}
+}
+/* A phone on its side: the field takes the full height, the controls sit in a strip on the right. */
+@media (orientation:landscape) and (max-height:520px){
+  #ui{left:auto;top:0;width:clamp(230px,calc(100vw - 100dvh * 1.44),340px);flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:center;gap:8px;overflow-y:auto;
+    padding:34px max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) 12px;background:linear-gradient(to left,rgba(5,5,5,.96) 80%,rgba(5,5,5,0))}
+  #note{flex:0 0 auto;font-size:14px;min-height:3.4em}
+  #controls{flex:0 0 auto;max-width:none;grid-template-columns:1fr}
+  #go{min-height:48px}
+  nav{justify-content:space-between}
+  nav button,nav a{padding:0 5px;font-size:13px}
+  header{right:clamp(230px,calc(100vw - 100dvh * 1.44),340px)}
 }
 </style>
 </head>
 <body>
 <main>
-  <header>
+  <header id="top">
     <h1>New Earth</h1>
     <p class="hud" id="lvl">Level <b>1</b> of 100</p>
     <p class="hud" id="tries">Tries <b>0</b></p>
@@ -97,6 +112,7 @@ dialog .row button{border:1px solid var(--line);padding:0 18px}
       <button id="next" type="button">Next level</button>
     </div>
   </div>
+  <div id="ui">
   <p id="note" role="status" aria-live="polite"></p>
   <div id="controls">
     <div class="dial" role="group" aria-label="Aim angle">
@@ -114,8 +130,10 @@ dialog .row button{border:1px solid var(--line);padding:0 18px}
   <nav aria-label="Game">
     <button id="levelsBtn" type="button">Levels</button>
     <button id="snd" type="button" aria-pressed="true">Sound on</button>
-    <a class="sp" href="/classic/">Classic: fly it yourself</a>
+    <button id="full" type="button" hidden>Full screen</button>
+    <a href="/classic/">Classic</a>
   </nav>
+  </div>
   <p class="sr" id="aimRead" aria-live="polite"></p>
 </main>
 
@@ -182,7 +200,7 @@ const INTRO = {
   100: 'A black hole sits in the way. Last one.',
 };
 const HOW = matchMedia('(pointer: coarse)').matches
-  ? 'Pull back from the rocket and let go. Fine tune with the buttons.'
+  ? 'Pull back anywhere on the screen and let go. Fine tune with the buttons.'
   : 'Drag back and let go, or use the arrow keys and Space.';
 const NAME = { earth: 'Earth', moon: 'a moon', planet: 'a planet', sun: 'a sun', hole: 'the black hole', asteroid: 'an asteroid', sat: 'a satellite', droid: 'the droid' };
 
@@ -269,12 +287,22 @@ function finish(r) {
 let stars = [];
 function makeStars(seed) {
   let a = seed * 2654435761 >>> 0; const R = () => (a = a * 1664525 + 1013904223 >>> 0) / 4294967296;
-  return Array.from({ length: 70 }, () => [R() * W, R() * H, R() < .15 ? .9 : .5, .25 + R() * .45]);
+  return Array.from({ length: 160 }, () => [R(), R(), R() < .15 ? .9 : .5, .25 + R() * .45]);
 }
+// The canvas covers the whole screen. The 360 x 250 field is drawn as large as fits in the space
+// the header and controls leave free. view = that placement in CSS pixels: scale k, offset ox, oy.
+let view = { k: 1, ox: 0, oy: 0 };
 function fit() {
-  const r = cv.getBoundingClientRect(), d = Math.min(3, window.devicePixelRatio || 1);
-  const w = Math.round(r.width * d), h = Math.round(r.width * H / W * d);
+  const vw = innerWidth, vh = innerHeight, d = Math.min(3, window.devicePixelRatio || 1);
+  const w = Math.round(vw * d), h = Math.round(vh * d);
   if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  const ui = $('ui').getBoundingClientRect(), hd = $('top').getBoundingClientRect(), side = ui.top < vh / 3;
+  const left = Math.max(8, document.querySelector('h1').getBoundingClientRect().left - 8);
+  const top = hd.bottom, right = (side ? ui.left : vw - left + 8) - 8, bottom = (side ? vh : ui.top) - 8;
+  const k = Math.max(.2, Math.min((right - left) / W, (bottom - top) / H));
+  view = { k, ox: left + (right - left - k * W) / 2, oy: top + (bottom - top - k * H) / 2 };
+  const st = document.documentElement.style;
+  st.setProperty('--fx', view.ox + 'px'); st.setProperty('--fy', view.oy + 'px'); st.setProperty('--fw', k * W + 'px'); st.setProperty('--fh', k * H + 'px');
   draw();
 }
 function dots(pts, alpha, r) {
@@ -352,8 +380,12 @@ function rocket(x, y, a) {
 }
 function draw() {
   if (!L || !cv.width) return;
-  const k = cv.width / W; ctx.setTransform(k, 0, 0, k, 0, 0); ctx.clearRect(0, 0, W, H);
-  for (const [x, y, r, a] of stars) { ctx.fillStyle = `rgba(242,242,242,${a})`; ctx.fillRect(x, y, r, r); }
+  const d = cv.width / innerWidth, k = view.k * d;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
+  for (const [x, y, r, a] of stars) { ctx.fillStyle = `rgba(242,242,242,${a})`; ctx.fillRect(x * cv.width, y * cv.height, r * k, r * k); }
+  ctx.setTransform(k, 0, 0, k, view.ox * d, view.oy * d);
+  // the edge of the field: a rocket that crosses it is lost
+  ctx.strokeStyle = 'rgba(242,242,242,.12)'; ctx.lineWidth = .6; ctx.setLineDash([2, 5]); ctx.strokeRect(-OUT, -OUT, W + 2 * OUT, H + 2 * OUT); ctx.setLineDash([]);
   const t = S && mode !== 'wait' ? S.n * STEP : 0;
   // paths of the movers
   ctx.setLineDash([1.5, 4]); ctx.strokeStyle = 'rgba(242,242,242,.28)'; ctx.lineWidth = .8;
@@ -398,15 +430,14 @@ function draw() {
 }
 
 // ---- aiming by pointer ----
-function at(e) { const r = cv.getBoundingClientRect(); return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height, k: r.width / W }; }
+function at(e) { return { x: (e.clientX - view.ox) / view.k, y: (e.clientY - view.oy) / view.k, k: view.k }; }
 function nearRocket(e) { const p = at(e); return Math.hypot(p.x - L.s.x, p.y - L.s.y) * p.k <= 48; }
-// A finger only aims when it starts on the rocket, so the page still scrolls everywhere else.
-cv.addEventListener('touchstart', e => { if (mode === 'aim' && nearRocket(e.touches[0])) e.preventDefault(); }, { passive: false });
+// The page does not scroll, so a finger can pull back from anywhere on the field.
+cv.addEventListener('touchstart', e => { if (mode === 'aim') e.preventDefault(); }, { passive: false });
 cv.addEventListener('touchmove', e => { if (drag) e.preventDefault(); }, { passive: false });
 cv.addEventListener('pointerdown', e => {
   if (mode !== 'aim' || (e.pointerType === 'mouse' && e.button !== 0)) return;
   const near = nearRocket(e);
-  if (e.pointerType !== 'mouse' && !near) return;
   const p = at(e);
   drag = { id: e.pointerId, ox: near ? L.s.x : p.x, oy: near ? L.s.y : p.y, live: false, a0: ang, p0: pow };
   try { cv.setPointerCapture(e.pointerId); } catch {}
@@ -502,8 +533,16 @@ $('share').addEventListener('click', async () => {
 });
 
 // ---- start ----
-new ResizeObserver(fit).observe(cv);
+new ResizeObserver(fit).observe($('ui'));
 addEventListener('resize', fit);
+addEventListener('orientationchange', () => setTimeout(fit, 250));
+// Full screen button, where the browser allows it (not iPhone Safari).
+const fsEl = document.documentElement;
+if (document.fullscreenEnabled && fsEl.requestFullscreen) {
+  $('full').hidden = false;
+  $('full').addEventListener('click', () => { document.fullscreenElement ? document.exitFullscreen() : fsEl.requestFullscreen().catch(() => {}); });
+  document.addEventListener('fullscreenchange', () => { $('full').textContent = document.fullscreenElement ? 'Exit full screen' : 'Full screen'; fit(); });
+}
 const want = +new URLSearchParams(location.search).get('level');
 load(want >= 1 && want <= save.reached ? want : save.reached);
 fit();
