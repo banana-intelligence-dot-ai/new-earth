@@ -170,18 +170,21 @@ let S = null, trail = [], ghost = [], mark = null, drag = null, raf = 0, last = 
 const aims = {};
 const INTRO = {
   1: 'Reach New Earth. A world sits in the way, so no straight shot works. Pull the rocket back, let go, and let gravity bend it around.',
-  2: 'Aim to one side of the world in the way. Its pull swings you around it.',
+  2: 'Aim to one side of the world in the way. Its pull swings you around it. Suns pull hardest, then planets, then moons.',
   6: 'Two worlds now. Each one pulls.',
   11: 'More worlds, more pull.',
+  16: 'Asteroids now. They do not pull, but hitting one ends the flight.',
   26: 'Some planets move now. They start when you launch.',
+  36: 'A satellite circles one of the worlds. It starts moving when you launch.',
   46: 'Four worlds and a smaller target.',
+  56: 'A droid is loose out here. Do not hit it.',
   86: 'Everything at once.',
   100: 'A black hole sits in the way. Last one.',
 };
 const HOW = matchMedia('(pointer: coarse)').matches
   ? 'Pull back from the rocket and let go. Fine tune with the buttons.'
   : 'Drag back and let go, or use the arrow keys and Space.';
-const NAME = { earth: 'Earth', moon: 'a moon', planet: 'a planet', sun: 'a sun', hole: 'the black hole' };
+const NAME = { earth: 'Earth', moon: 'a moon', planet: 'a planet', sun: 'a sun', hole: 'the black hole', asteroid: 'an asteroid', sat: 'a satellite', droid: 'the droid' };
 
 function setNote(text, dim) { const el = $('note'); el.textContent = text; el.classList.toggle('dim', !!dim); }
 function hud() {
@@ -303,6 +306,37 @@ function body(b, p) {
     ctx.save(); ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.clip();
     ctx.strokeStyle = 'rgba(242,242,242,.45)'; ctx.lineWidth = 1;
     for (const k of [-.35, .1, .5]) { ctx.beginPath(); ctx.moveTo(x - r, y + k * r); ctx.quadraticCurveTo(x, y + k * r + r * .22, x + r, y + k * r); ctx.stroke(); }
+    ctx.restore();
+  } else if (b.type === 'asteroid') {
+    // a lumpy rock: no pull, but solid
+    ctx.fillStyle = '#6b6b6b'; ctx.strokeStyle = '#cfcfcf'; ctx.lineWidth = .8; ctx.beginPath();
+    for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2, rr = r * (.78 + .3 * Math.abs(Math.sin(i * 2.7 + b.x))); ctx[i ? 'lineTo' : 'moveTo'](x + rr * Math.cos(a), y + rr * Math.sin(a)); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#4a4a4a'; ctx.beginPath(); ctx.arc(x - r * .25, y - r * .15, r * .22, 0, 7); ctx.fill();
+  } else if (b.type === 'sat') {
+    // a satellite: box with two solar panels, turned along its orbit
+    ctx.save(); ctx.translate(x, y); if (b.o) ctx.rotate(Math.atan2(y - b.o.cy, x - b.o.cx));
+    ctx.fillStyle = '#6FA8FF'; ctx.strokeStyle = '#f2f2f2'; ctx.lineWidth = .6;
+    for (const k of [-1, 1]) { ctx.fillRect(-r * .35, k * r * .45 - (k < 0 ? r * .75 : 0), r * .7, r * .75); ctx.strokeRect(-r * .35, k * r * .45 - (k < 0 ? r * .75 : 0), r * .7, r * .75); }
+    ctx.fillStyle = '#f2f2f2'; ctx.fillRect(-r * .45, -r * .45, r * .9, r * .9);
+    ctx.strokeStyle = '#f2f2f2'; ctx.beginPath(); ctx.moveTo(-r * .45, 0); ctx.lineTo(-r * .95, 0); ctx.stroke();
+    ctx.beginPath(); ctx.arc(-r, 0, r * .22, Math.PI * .5, Math.PI * 1.5); ctx.stroke();
+    ctx.restore();
+  } else if (b.type === 'droid') {
+    // the droid from the classic game
+    const u = r / 21, WHT = '#eef1f4', BLU = '#2d5fd0', SIL = '#aab3bd';
+    ctx.save(); ctx.translate(x, y + 1); ctx.rotate(.3); ctx.scale(u, u); ctx.lineWidth = 1; ctx.strokeStyle = '#0a0a0a';
+    for (const k of [-1, 1]) {
+      ctx.fillStyle = WHT; ctx.fillRect(k * 13 - 3, -5, 6, 20); ctx.strokeRect(k * 13 - 3, -5, 6, 20); ctx.fillStyle = BLU; ctx.fillRect(k * 13 - 2, -1, 4, 9);
+      ctx.fillStyle = WHT; ctx.beginPath(); ctx.moveTo(k * 13 - 5, 19); ctx.lineTo(k * 13 - 3, 13); ctx.lineTo(k * 13 + 3, 13); ctx.lineTo(k * 13 + 5, 19); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    ctx.fillStyle = WHT; ctx.fillRect(-10, -6, 20, 22); ctx.strokeRect(-10, -6, 20, 22);
+    ctx.fillStyle = BLU; ctx.fillRect(-7, -3, 5, 3); ctx.fillRect(2, -3, 5, 3); ctx.fillRect(-7, 2, 14, 2); ctx.fillRect(-3, 6, 6, 8);
+    ctx.fillStyle = SIL; ctx.fillRect(-7, 6, 3, 8); ctx.fillRect(4, 6, 3, 8);
+    ctx.beginPath(); ctx.arc(0, -6, 10, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.save(); ctx.beginPath(); ctx.arc(0, -6, 10, Math.PI, 0); ctx.clip(); ctx.fillStyle = BLU; ctx.fillRect(-10, -9, 20, 2.2); ctx.fillRect(-4, -15, 8, 4.5); ctx.restore();
+    ctx.fillStyle = '#0a0a0a'; ctx.beginPath(); ctx.arc(0, -12.6, 1.9, 0, 7); ctx.fill();
+    ctx.fillStyle = '#e23b3b'; ctx.beginPath(); ctx.arc(4.6, -8.2, 1, 0, 7); ctx.fill();
     ctx.restore();
   } else {
     ctx.fillStyle = '#a3a3a3'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();

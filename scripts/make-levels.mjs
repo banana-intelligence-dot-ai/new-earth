@@ -27,6 +27,8 @@ export function plan(n) {
     bodies: n < 6 ? 1 : n < 11 ? 2 : n < 26 ? 2 + (n % 2) : n < 46 ? 3 : n < 66 ? 4 : n < 86 ? 3 + (n % 2) : 4,
     movers: n < 26 ? 0 : n < 46 ? 1 : n < 66 ? 1 + (n % 2) : n < 86 ? n % 2 : 1 + (n % 2),
     blocker: true,
+    // things that do not pull but end the flight: asteroids from 16, a satellite from 36, the droid from 56
+    obst: [n >= 16 && 'asteroid', n >= 36 && 'sat', n >= 56 && 'droid', n >= 90 && 'asteroid'].filter(Boolean),
     targetR: Math.round(22 - 11 * f),
     mu: 1 + 0.6 * f,
     width: 5 * Math.pow(1 / 5, f),   // widest winning window, in degrees: 5 at level 1, 1 at level 100
@@ -40,7 +42,7 @@ export function straight(L) {
   for (let a = dir - 30; a <= dir + 30; a += 0.5) for (let p = 40; p <= 150; p += 2.5) if (fly(flat, a, p).r === 'win') return true;
   return false;
 }
-const KIND = { moon: [7, 10, 7000, 11000], planet: [12, 17, 16000, 28000], sun: [18, 22, 30000, 40000] };
+const KIND = { moon: [7, 10, 9000, 13000], planet: [12, 17, 22000, 36000], sun: [18, 22, 48000, 64000] };
 function make(kind, x, y, R, scale) {
   const [ra, rb, ma, mb] = KIND[kind], u = R();
   return { x: r1(x), y: r1(y), r: Math.round(ra + (rb - ra) * u), mu: Math.round((ma + (mb - ma) * u) * scale / 100) * 100, type: kind };
@@ -48,7 +50,7 @@ function make(kind, x, y, R, scale) {
 
 function candidate(n, k) {
   const P = plan(n), R = rng(n * 7919 + k * 104729 + 17);
-  const ey = 45 + R() * 175, earth = { x: r1(18 + R() * 16), y: r1(ey), r: 22, mu: 22000, type: 'earth' };
+  const ey = 45 + R() * 175, earth = { x: r1(18 + R() * 16), y: r1(ey), r: 22, mu: 24000, type: 'earth' };
   const t = { x: r1(300 + R() * 34), y: r1(32 + R() * 186), r: P.targetR };
   const dx = t.x - earth.x, dy = t.y - earth.y, D = Math.hypot(dx, dy);
   const s = { x: r1(earth.x + dx / D * 27.5), y: r1(earth.y + dy / D * 27.5) };
@@ -64,7 +66,7 @@ function candidate(n, k) {
   };
   if (P.blocker) {
     const u = 0.36 + R() * 0.28, kind = n === 100 ? 'hole' : R() < 0.5 ? 'sun' : 'planet';
-    const c = kind === 'hole' ? { x: r1(s.x + dx * u), y: r1(s.y + dy * u), r: 9, mu: 90000, type: 'hole' } : make(kind, s.x + (t.x - s.x) * u, s.y + (t.y - s.y) * u, R, P.mu);
+    const c = kind === 'hole' ? { x: r1(s.x + dx * u), y: r1(s.y + dy * u), r: 9, mu: 100000, type: 'hole' } : make(kind, s.x + (t.x - s.x) * u, s.y + (t.y - s.y) * u, R, P.mu);
     if (kind !== 'hole') c.r = Math.max(c.r, 15);
     b.push(c);
   }
@@ -91,6 +93,35 @@ function candidate(n, k) {
     const at = bodyAt(o, 0); o.x = r1(at.x); o.y = r1(at.y); made++;
   }
   if (made < P.movers) return null;
+  // obstacles: no pull, but hitting one ends the flight
+  const px = -dy / D, py = dx / D, worlds = b.filter(o => o.type !== 'earth' && !o.o);
+  for (const kind of P.obst) {
+    let c = null;
+    for (let tries = 0; tries < 80 && !c; tries++) {
+      if (kind === 'asteroid') {
+        const u = 0.2 + R() * 0.7, off = (15 + R() * 55) * (R() < 0.5 ? -1 : 1);
+        const a = { x: r1(s.x + dx * u + px * off), y: r1(s.y + dy * u + py * off), r: 5 + Math.floor(R() * 3), mu: 0, type: 'asteroid' };
+        if (a.x > 60 && a.x < W - 20 && a.y > 12 && a.y < H - 12 && clear(a, 8)) c = a;
+      } else if (kind === 'sat') {
+        const h = worlds[Math.floor(R() * worlds.length)], ring = h.r + 11 + R() * 8;
+        const gap = (q, qr) => Math.hypot(q.x - h.x, q.y - h.y) - ring - qr;
+        if (gap(s, 0) < 30 || gap(t, t.r) < 14 || gap(earth, earth.r) < 12) continue;
+        if (b.some(o => o !== h && o !== earth && (o.o ? Math.hypot(o.o.cx - h.x, o.o.cy - h.y) - o.o.r - ring - o.r < 12 : gap(o, o.r) < 12))) continue;
+        const p = R() * Math.PI * 2, w = (1.2 + R()) * (R() < 0.5 ? -1 : 1);
+        c = { r: 5, mu: 0, type: 'sat', o: { cx: h.x, cy: h.y, r: r1(ring), p: Math.round(p * 100) / 100, w: Math.round(w * 100) / 100 } };
+      } else {
+        const u = 0.3 + R() * 0.5, off = (R() * 2 - 1) * 60, ring = 18 + R() * 16;
+        const cx = s.x + dx * u + px * off, cy = s.y + dy * u + py * off;
+        if (cx - ring < 60 || cx + ring > 300 || cy - ring < 10 || cy + ring > H - 10) continue;
+        if (!clear({ x: cx, y: cy, r: 7, ring }, 10)) continue;
+        const p = R() * Math.PI * 2, w = (0.6 + R() * 0.7) * (R() < 0.5 ? -1 : 1);
+        c = { r: 7, mu: 0, type: 'droid', o: { cx: r1(cx), cy: r1(cy), r: r1(ring), p: Math.round(p * 100) / 100, w: Math.round(w * 100) / 100 } };
+      }
+    }
+    if (!c) return null;
+    if (c.o) { const at = bodyAt(c, 0); c.x = r1(at.x); c.y = r1(at.y); }
+    b.push(c);
+  }
   const aim = [r1(Math.atan2(-(t.y - s.y), t.x - s.x) * 180 / Math.PI), 100];
   return { s, t, b, aim };
 }

@@ -26,8 +26,9 @@ LEVELS.forEach((L, i) => {
   if (straight(L)) fail(`level ${n}: a straight shot wins with gravity off`);
   if (L.aim[1] < PMIN || L.aim[1] > PMAX) fail(`level ${n}: starting power out of range`);
   if (L.t.r !== P.targetR) fail(`level ${n}: target size ${L.t.r}, plan says ${P.targetR}`);
-  if (L.b.filter(b => b.o).length !== P.movers) fail(`level ${n}: wrong number of moving bodies`);
-  if (n % 10 === 0 || n === 1) console.log(`level ${String(n).padStart(3)}: ${L.b.length - 1} bodies, ${P.movers} moving, target ${L.t.r}, window ${sv.width.toFixed(1)} deg, safe shot ${sv.best.ang} deg at power ${sv.best.pow}`);
+  if (L.b.filter(b => !b.mu).map(b => b.type).join() !== P.obst.join()) fail(`level ${n}: obstacles do not match the plan`);
+  if (L.b.filter(b => b.o && b.mu).length !== P.movers) fail(`level ${n}: wrong number of moving bodies`);
+  if (n % 10 === 0 || n === 1) console.log(`level ${String(n).padStart(3)}: ${L.b.filter(b => b.mu).length - 1} worlds, ${P.movers} moving, ${P.obst.length} obstacles, target ${L.t.r}, window ${sv.width.toFixed(1)} deg, safe shot ${sv.best.ang} deg at power ${sv.best.pow}`);
 });
 // Rising difficulty: the widest winning window shrinks from each block of 20 levels to the next.
 const avg = k => width.slice(k * 20, k * 20 + 20).reduce((a, b) => a + b, 0) / 20;
