@@ -10,5 +10,5 @@ A browser game. Pull back, launch one rocket from Earth, and let gravity bend it
 - **Prove every level is winnable:** `npm test`. It flies every shot on a grid for all 100 levels and fails if any level has no safe shot (one that still wins half a degree or one power point off), or if any level can be won with gravity switched off.
 - **Classic mode:** `classic/` is the first version, where you fly the rocket yourself against a robot's time. `npm run robot` refreshes `classic/robot.json`.
 - **Build:** `npm run build` copies the site into `dist/` and runs seolint. Errors fail the build.
-- **Data:** progress and best tries live in the player's browser only. Analytics is Vercel's cookieless page counter plus plain event names (launch, win, finish, share).
+- **Data:** progress and best tries live in the player's browser only. Analytics is Vercel's cookieless page counter plus plain event names (launch, win, finish, share, and which link tag brought a visit, such as from-ig).
 - **License:** MIT. Made by Banana Intelligence LLC.
