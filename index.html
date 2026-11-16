@@ -163,7 +163,10 @@ let save = { reached: 1, best: {} };
 try { Object.assign(save, JSON.parse(localStorage.getItem(KEY)) || {}); } catch {}
 const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch {} };
 let muted = false; try { muted = localStorage.getItem('newearth.muted') === '1'; } catch {}
-const track = name => { try { window.va && window.va('event', { name }); } catch {} };
+window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
+const track = name => { try { window.va('event', { name }); } catch {} };
+// Count which link brought the visit (?ct=ig counts as "from-ig"). A plain count, nothing about the person.
+{ const ct = new URLSearchParams(location.search).get('ct'); if (ct && /^[a-z0-9-]{1,24}$/.test(ct)) track('from-' + ct); }
 
 // ---- sound ----
 let ac = null;
