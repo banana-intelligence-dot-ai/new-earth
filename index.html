@@ -56,7 +56,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--new);outline-offset
 nav{display:flex;flex-wrap:wrap;gap:0 2px;align-items:center}
 nav button,nav a{font-size:14px;color:var(--dim);padding:0 12px;min-height:44px;display:inline-flex;align-items:center;text-decoration:none;border-radius:10px}
 nav button:hover,nav a:hover{color:var(--ink)}
-#won{position:fixed;z-index:3;left:var(--fx,0);width:var(--fw,100%);top:calc(var(--fy,0px) + var(--fh,100%));transform:translateY(-100%);padding:44px 16px 16px;display:none;gap:12px;align-items:center;flex-wrap:wrap;
+#won{position:fixed;z-index:3;left:var(--fx,0);width:var(--fw,100%);top:calc(var(--fy,0px) + var(--fh,100%));transform:translateY(-100%);padding:44px 20px 20px;display:none;gap:12px;align-items:center;flex-wrap:wrap;
   background:linear-gradient(to top,rgba(0,0,0,.94) calc(100% - 44px),rgba(0,0,0,0))}
 #won.on{display:flex}
 #won p{font-size:17px;font-weight:600;margin-right:auto}
@@ -190,7 +190,7 @@ const sfx = {
 
 // ---- level state ----
 let n = 1, L, ang = 0, pow = 100, tries = 0, mode = 'aim';   // aim | fly | wait | won
-let S = null, trail = [], ghost = [], mark = null, drag = null, raf = 0, last = 0, acc = 0, launched = false;
+let S = null, trail = [], ghost = [], mark = null, drag = null, fx = null, fxRaf = 0, raf = 0, last = 0, acc = 0, launched = false;
 const aims = {};
 const INTRO = {
   1: 'Reach New Earth. A world sits in the way, so no straight shot works. Pull the rocket back, let go, and let gravity bend it around.',
@@ -230,7 +230,7 @@ function setAim(a, p, quiet) {
 }
 
 function load(k) {
-  cancelAnimationFrame(raf);
+  cancelAnimationFrame(raf); cancelAnimationFrame(fxRaf); fx = null;
   n = Math.min(TOTAL, Math.max(1, k)); L = LEVELS[n - 1];
   [ang, pow] = aims[n] || L.aim; tries = 0; mode = 'aim'; S = null; trail = []; ghost = []; mark = null; drag = null;
   stars = makeStars(n);
@@ -243,7 +243,7 @@ function load(k) {
 function launch() {
   if (mode !== 'aim') return;
   if (!launched) { launched = true; track('launch'); }
-  tries++; mode = 'fly'; S = newShot(L, ang, pow); trail = []; mark = null;
+  tries++; mode = 'fly'; S = newShot(L, ang, pow); trail = []; mark = null; fx = null;
   setNote('Rocket away.', true); sfx.launch(); hud();
   if (reduced.matches) {
     let r = null;
@@ -276,7 +276,7 @@ function finish(r) {
       $('next').textContent = 'Next level';
     }
     setNote(`You reached New Earth in ${tries === 1 ? '1 try' : tries + ' tries'}.`);
-    $('won').classList.add('on'); hud(); draw();
+    $('won').classList.add('on'); hud(); fx = { t0: performance.now() }; pulse();
     if (first) track('win');
     $('next').focus({ preventScroll: true });
     return;
@@ -285,7 +285,7 @@ function finish(r) {
   if (r === 'crash') sfx.crash(); else if (r !== 'abort') sfx.lost();
   mark = r === 'crash' ? { x: S.x, y: S.y } : null; ghost = trail; trail = [];
   setNote(`Try ${tries}: ${why}. ${r === 'crash' ? 'Try another angle.' : r === 'lost' ? 'Less power, or lean on a planet.' : 'Try again.'}`);
-  mode = 'wait'; hud(); draw();
+  mode = 'wait'; hud(); fx = { t0: performance.now() }; pulse();
   setTimeout(() => { if (mode !== 'wait') return; mode = 'aim'; S = null; hud(); draw(); }, reduced.matches || r === 'abort' ? 0 : 650);
 }
 
@@ -313,9 +313,23 @@ function fit() {
   st.setProperty('--fx', view.ox + 'px'); st.setProperty('--fy', view.oy + 'px'); st.setProperty('--fw', k * sw + 'px'); st.setProperty('--fh', k * sh + 'px');
   draw();
 }
-function dots(pts, alpha, r) {
-  ctx.fillStyle = `rgba(242,242,242,${alpha})`;
-  for (let i = 0; i < pts.length; i += 2) { ctx.beginPath(); ctx.arc(pts[i], pts[i + 1], r, 0, 7); ctx.fill(); }
+// Dots fade from a0 at the tail to a1 at the head. Sizes are field units with a floor in CSS px, so a phone still sees them.
+const fl = (u, px) => Math.max(u, px / view.k);
+function dots(pts, a0, a1, r) {
+  for (let i = 0; i < pts.length; i += 2) {
+    ctx.fillStyle = `rgba(242,242,242,${a0 + (a1 - a0) * i / pts.length})`;
+    ctx.beginPath(); ctx.arc(pts[i], pts[i + 1], r, 0, 7); ctx.fill();
+  }
+}
+// One ring that grows from r0 to r1 over 600 ms and settles at a faint ring (all of it at once under reduced motion).
+function ring(x, y, r0, r1, col, t0) {
+  const p = reduced.matches ? 1 : Math.min(1, (performance.now() - t0) / 600);
+  ctx.strokeStyle = col; ctx.globalAlpha = Math.max(.35, 1 - p); ctx.lineWidth = fl(1.2, 2);
+  ctx.beginPath(); ctx.arc(x, y, r0 + (r1 - r0) * (1 - (1 - p) * (1 - p)), 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
+}
+function pulse() {
+  cancelAnimationFrame(fxRaf); draw();
+  if (!reduced.matches && fx && performance.now() - fx.t0 < 600) fxRaf = requestAnimationFrame(pulse);
 }
 function body(b, p) {
   const { x, y } = p, r = b.r;
@@ -377,7 +391,8 @@ function body(b, p) {
   }
 }
 function rocket(x, y, a) {
-  ctx.save(); ctx.translate(x, y); ctx.rotate(-a * RAD);
+  const s = fl(1, 22 / 12); // the drawing is 12 field units long: never under 22 CSS px (about 18 of white) on screen
+  ctx.save(); ctx.translate(x, y); ctx.rotate(-a * RAD); ctx.scale(s, s);
   ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(-5, 4.2); ctx.lineTo(-2.6, 0); ctx.lineTo(-5, -4.2); ctx.closePath();
   ctx.fillStyle = '#f2f2f2'; ctx.fill(); ctx.strokeStyle = '#000'; ctx.lineWidth = .8; ctx.stroke();
   ctx.restore();
@@ -396,8 +411,8 @@ function draw() {
   ctx.setLineDash([1.5, 4]); ctx.strokeStyle = 'rgba(242,242,242,.28)'; ctx.lineWidth = .8;
   for (const b of L.b) if (b.o) { ctx.beginPath(); ctx.arc(b.o.cx, b.o.cy, b.o.r, 0, 7); ctx.stroke(); }
   ctx.setLineDash([]);
-  if (ghost.length) dots(ghost, .2, .9);
-  if (trail.length) dots(trail, .75, 1.1);
+  if (ghost.length) dots(ghost, .08, .3, fl(.9, 1.4));
+  if (trail.length) dots(trail, .2, .95, fl(1.1, 1.5));
   // New Earth
   const T = L.t;
   ctx.setLineDash([2, 3]); ctx.strokeStyle = 'rgba(111,168,255,.55)'; ctx.lineWidth = .8;
@@ -418,20 +433,24 @@ function draw() {
   }
   for (const b of L.b) body(b, bodyAt(b, t));
   if (mark) {
-    ctx.strokeStyle = '#f2f2f2'; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.beginPath();
-    ctx.moveTo(mark.x - 4, mark.y - 4); ctx.lineTo(mark.x + 4, mark.y + 4); ctx.moveTo(mark.x + 4, mark.y - 4); ctx.lineTo(mark.x - 4, mark.y + 4); ctx.stroke();
+    const m = fl(4, 8);
+    ring(mark.x, mark.y, m, m * 2.4, 'rgba(242,242,242,.8)', fx ? fx.t0 : 0);
+    ctx.strokeStyle = '#f2f2f2'; ctx.lineWidth = fl(1.6, 2.6); ctx.lineCap = 'round'; ctx.beginPath();
+    ctx.moveTo(mark.x - m, mark.y - m); ctx.lineTo(mark.x + m, mark.y + m); ctx.moveTo(mark.x + m, mark.y - m); ctx.lineTo(mark.x - m, mark.y + m); ctx.stroke();
   }
+  if (mode === 'won') for (const [a, b, dt] of [[T.r + 3, T.r + 20, 0], [T.r + 3, T.r + 30, 160]]) ring(T.x, T.y, a, b, 'rgba(111,168,255,.9)', fx ? fx.t0 + dt : 0);
   if (mode === 'aim') {
     const c = Math.cos(ang * RAD), s = -Math.sin(ang * RAD);
     // short dotted preview: where the rocket starts off, not where gravity takes it
     ctx.fillStyle = 'rgba(242,242,242,.9)';
-    const len = pow * .55;
-    for (let d = 10; d <= len; d += 6) { ctx.beginPath(); ctx.arc(L.s.x + c * d, L.s.y + s * d, 1, 0, 7); ctx.fill(); }
+    const len = pow * .55, dr = fl(1, 1.8), gap = fl(6, 9);
+    for (let d = fl(10, 17); d <= len; d += gap) { ctx.beginPath(); ctx.arc(L.s.x + c * d, L.s.y + s * d, dr, 0, 7); ctx.fill(); }
     if (drag && drag.live) {
-      const pl = pow / PULL;
-      ctx.strokeStyle = 'rgba(255,210,63,.9)'; ctx.lineWidth = 1.2; ctx.beginPath();
-      ctx.moveTo(L.s.x, L.s.y); ctx.lineTo(L.s.x - c * pl, L.s.y - s * pl); ctx.stroke();
-      ctx.beginPath(); ctx.arc(L.s.x - c * pl, L.s.y - s * pl, 2.4, 0, 7); ctx.fillStyle = '#FFD23F'; ctx.fill();
+      // the stretched band: from the rocket back to the pull point, as long as the pull is strong
+      const pl = pow / PULL, bx = L.s.x - c * pl, by = L.s.y - s * pl;
+      ctx.lineCap = 'round'; ctx.strokeStyle = 'rgba(255,210,63,.95)'; ctx.lineWidth = fl(1.8, 4.5);
+      ctx.beginPath(); ctx.moveTo(L.s.x, L.s.y); ctx.lineTo(bx, by); ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx, by, fl(2.4, 6), 0, 7); ctx.fillStyle = '#FFD23F'; ctx.fill();
     }
     rocket(L.s.x, L.s.y, ang);
   } else if (S && (mode === 'fly' || mode === 'won')) {
