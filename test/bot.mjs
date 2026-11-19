@@ -11,7 +11,7 @@ const DT = 1 / 60;
 // The published robot: these settings are what "the robot did" means on the site.
 export const ROBOT = { cruise: 300, horizon: 3.2, hold: 0.15 };
 
-const clone = S => ({ ...S, droid: S.droid ? { ...S.droid } : null });
+const clone = S => ({ ...S, probe: S.probe ? { ...S.probe } : null });
 const cands = [{ coast: true }, { brakeNow: true }];
 for (let i = 0; i < 16; i++) for (const T1 of [0.3, 0.8]) for (const brake of [false, true])
   cands.push({ aim: (i / 16) * 2 * Math.PI - Math.PI, T1, brake });

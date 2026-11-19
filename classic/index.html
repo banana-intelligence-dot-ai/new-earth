@@ -146,7 +146,7 @@ function makeLevel(seed){
       if(m>best){best=m;bx=x}}
     L.spawns.push({trig:r.mid,x:bx,y:r.mid})}
   L.spawns.push({trig:hole.y+150,x:450,y:hole.y+540});
-  L.droidY=L.numbered[41].y-320;
+  L.probeY=L.numbered[41].y-320;
   return L;
 }
 function lowIdx(L,y){const a=L.ys;let lo=0,hi=a.length;while(lo<hi){const m=(lo+hi)>>1;if(a[m]<y)lo=m+1;else hi=m}return lo}
@@ -157,7 +157,7 @@ function grav(L,x,y,out){let ax=0,ay=0;const bs=L.bodies;
     const r=Math.sqrt(r2),rr=Math.max(r,b.R);let g=b.gs*b.R*b.R/(rr*rr);const f=(b.infl-r)/(.3*b.infl);if(f<1)g*=f;
     ax+=g*dx/r;ay+=g*dy/r}
   out.x=ax;out.y=ay}
-function newState(){return{x:450,y:120+SHIP_R+3,vx:0,vy:0,a:0,t:0,landed:true,passed:0,shield:0,droid:null,droidDone:false}}
+function newState(){return{x:450,y:120+SHIP_R+3,vx:0,vy:0,a:0,t:0,landed:true,passed:0,shield:0,probe:null,probeDone:false}}
 function spawnFor(L,y){let s=L.spawns[0];for(const p of L.spawns)if(p.trig<y)s=p;return s}
 function placeAt(L,S,sp){S.vx=0;S.vy=0;S.a=0;
   if(sp.start){S.x=450;S.y=120+SHIP_R+3;S.landed=true}else{S.x=sp.x;S.y=sp.y;S.landed=false;S.shield=2.5}
@@ -188,8 +188,8 @@ function step(L,S,inp,dt){
       if(ex*ex+ey*ey<q*q)return'crash'}}
   if(!safe)for(const a of L.asteroids){const dy=a.y-S.y;if(dy>40||dy<-40)continue;
     const dx=wdx(S.x,a.x0+a.vx*S.t),q=a.R+SHIP_R;if(dx*dx+dy*dy<q*q)return'crash'}
-  if(!S.droidDone&&S.y>L.droidY){S.droidDone=true;S.droid={x:-40,y:S.y+430,vx:150}}
-  if(S.droid){const D=S.droid;D.x+=D.vx*dt;if(D.x>W+40)S.droid=null;
+  if(!S.probeDone&&S.y>L.probeY){S.probeDone=true;S.probe={x:-40,y:S.y+430,vx:150}}
+  if(S.probe){const D=S.probe;D.x+=D.vx*dt;if(D.x>W+40)S.probe=null;
     else if(!safe){const dx=D.x-S.x,dy=D.y-S.y;if(dx*dx+dy*dy<(15+SHIP_R)*(15+SHIP_R))return'crash'}}
   return null}
 /*SIM-END*/
@@ -232,7 +232,7 @@ function tone(f0,f1,t,d,v,type){if(!ac||muted)return;const o=ac.createOscillator
   o.frequency.setValueAtTime(f0,T);o.frequency.exponentialRampToValueAtTime(f1,T+d);
   g.gain.setValueAtTime(0,T);g.gain.linearRampToValueAtTime(v||.08,T+.01);g.gain.linearRampToValueAtTime(0,T+d);
   o.connect(g).connect(ac.destination);o.start(T);o.stop(T+d+.02)}
-function droidBeeps(){const f=[1900,2600,1400,3100,2200,900,2800,1700,2400];let t=0;
+function probeBeeps(){const f=[1900,2600,1400,3100,2200,900,2800,1700,2400];let t=0;
   f.forEach((a,i)=>{const d=.07+(i%3)*.04;tone(a,f[(i+3)%f.length],t,d,.06,i%2?'square':'sine');t+=d+.03})}
 function winTune(){[392,523,659,784].forEach((f,i)=>tone(f,f,i*.16,.5,.07,'triangle'))}
 
@@ -355,18 +355,16 @@ function drawRock(x,py,R,seed,t){if(py<-40||py>ch+40)return;copies(x,30,px=>{con
   ctx.save();ctx.translate(px,py);ctx.rotate(t*(seed-.5)*2);ctx.beginPath();
   for(let k=0;k<9;k++){const an=k/9*6.2832,m=r*(.78+q()*.42);ctx.lineTo(Math.cos(an)*m,Math.sin(an)*m)}
   ctx.closePath();ctx.fillStyle='#0d0d0d';ctx.fill();ctx.strokeStyle=INK;ctx.lineWidth=1;ctx.stroke();ctx.restore()})}
-function drawDroid(D,t){const px=SX(D.x),py=SY(D.y),u=Math.max(sc,.62)*1.15;ctx.save();ctx.translate(px,py);ctx.rotate(.3+Math.sin(t*3)*.06);ctx.scale(u,u);
-  const WHT='#eef1f4',BLU='#2d5fd0',SIL='#aab3bd';ctx.lineWidth=1;ctx.strokeStyle='#0a0a0a';
-  ctx.fillStyle='rgba(111,168,255,.75)';for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(s*13-3,19);ctx.lineTo(s*13,27+Math.random()*9);ctx.lineTo(s*13+3,19);ctx.fill()}
-  for(const s of[-1,1]){ctx.fillStyle=WHT;ctx.fillRect(s*13-3,-5,6,20);ctx.strokeRect(s*13-3,-5,6,20);ctx.fillStyle=BLU;ctx.fillRect(s*13-2,-1,4,9);
-    ctx.fillStyle=WHT;ctx.beginPath();ctx.moveTo(s*13-5,19);ctx.lineTo(s*13-3,13);ctx.lineTo(s*13+3,13);ctx.lineTo(s*13+5,19);ctx.closePath();ctx.fill();ctx.stroke();
-    ctx.fillStyle=SIL;ctx.fillRect(s*11-2+(s<0?0:0),-7,4,4)}
-  ctx.fillStyle=WHT;ctx.fillRect(-10,-6,20,22);ctx.strokeRect(-10,-6,20,22);
-  ctx.fillStyle=BLU;ctx.fillRect(-7,-3,5,3);ctx.fillRect(2,-3,5,3);ctx.fillRect(-7,2,14,2);ctx.fillRect(-3,6,6,8);
-  ctx.fillStyle=SIL;ctx.fillRect(-7,6,3,8);ctx.fillRect(4,6,3,8);
-  ctx.fillStyle=SIL;ctx.beginPath();ctx.arc(0,-6,10,Math.PI,0);ctx.closePath();ctx.fill();ctx.stroke();
-  ctx.save();ctx.beginPath();ctx.arc(0,-6,10,Math.PI,0);ctx.clip();ctx.fillStyle=BLU;ctx.fillRect(-10,-9,20,2.2);ctx.fillRect(-4,-15,8,4.5);ctx.fillRect(-9.5,-13,3,3);ctx.fillRect(6.5,-13,3,3);ctx.restore();
-  ctx.fillStyle='#0a0a0a';circle(0,-12.6,1.9);ctx.fill();ctx.fillStyle='#e23b3b';circle(4.6,-8.2,1);ctx.fill();
+function drawProbe(D,t){const px=SX(D.x),py=SY(D.y),u=Math.max(sc,.62)*1.15;ctx.save();ctx.translate(px,py);ctx.rotate(.3+Math.sin(t*3)*.06);ctx.scale(u,u);
+  const AMBER='#f2a33a',DARK='#14181d',CYAN='#5fe1ff',GREY='#aab3bd';ctx.lineWidth=1;ctx.strokeStyle='#0a0a0a';
+  ctx.strokeStyle=GREY;ctx.lineWidth=2;
+  for(const [sx,sy,ex,ey] of[[-5,10,-11,22],[0,14,0,24],[5,10,11,22]]){ctx.beginPath();ctx.moveTo(sx,sy);ctx.lineTo(ex,ey);ctx.stroke()}
+  ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(1,-13);ctx.lineTo(5,-22);ctx.stroke();
+  ctx.fillStyle='#e23b3b';ctx.beginPath();ctx.arc(5,-22,1.7,0,7);ctx.fill();ctx.strokeStyle='#0a0a0a';ctx.lineWidth=1;ctx.stroke();
+  ctx.fillStyle=AMBER;ctx.beginPath();ctx.moveTo(0,-14);ctx.lineTo(9,-8);ctx.lineTo(9,9);ctx.lineTo(0,15);ctx.lineTo(-9,9);ctx.lineTo(-9,-8);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.save();ctx.clip();ctx.fillStyle=GREY;ctx.fillRect(-9,4,18,3);ctx.restore();
+  ctx.fillStyle=DARK;ctx.beginPath();ctx.arc(0,-5,5.5,0,7);ctx.fill();
+  ctx.fillStyle=CYAN;ctx.beginPath();ctx.arc(-1.7,-7,1.25,0,7);ctx.fill();
   ctx.restore()}
 function drawShip(px,py,a,flame,brake,alpha){const u=Math.max(sc,.62);ctx.save();ctx.translate(px,py);ctx.rotate(a);ctx.scale(u,u);ctx.globalAlpha=alpha;
   if(flame){ctx.strokeStyle=INK;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(-4,8);ctx.lineTo(0,13+Math.random()*13);ctx.lineTo(4,8);ctx.stroke()}
@@ -386,7 +384,7 @@ function render(t){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=BG;ctx.fillRe
   for(let i=lowIdx(L,lo);i<bs.length&&bs[i].y<hi;i++)drawWell(bs[i]);
   for(let i=lowIdx(L,lo);i<bs.length&&bs[i].y<hi;i++)drawBody(bs[i],S.t);
   for(const a of L.asteroids)if(a.y>lo&&a.y<hi)drawRock(wrapX(a.x0+a.vx*S.t),SY(a.y),a.R,a.seed,S.t);
-  if(S.droid)drawDroid(S.droid,S.t);
+  if(S.probe)drawProbe(S.probe,S.t);
   ctx.fillStyle=INK;trail.forEach((p,i)=>{ctx.globalAlpha=.32*i/trail.length;ctx.fillRect(SX(p.x)-1,SY(p.y)-1,2,2)});ctx.globalAlpha=1;
   if(mode==='play'){drawPath();const blink=S.shield>0&&!S.landed?(.45+.4*Math.sin(S.t*22+performance.now()/40)):1;
     for(let o=-W;o<=W;o+=W)drawShip(SX(S.x+o),SY(S.y),S.a,input.thrust&&!paused&&readyT<=0,input.brake&&!S.landed,blink)}
@@ -403,7 +401,7 @@ function render(t){ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=BG;ctx.fillRe
 /* ---------- loop ---------- */
 const MISSION='From Earth to New Earth. Get past 100 bodies.<br>'+(matchMedia('(pointer:coarse)').matches?'Push the stick up to launch.':'Hold the up arrow to launch.');
 const setCall=()=>{callI=0;while(callI<L.callouts.length&&L.callouts[callI].y<S.y-250)callI++};
-let callI=0,mission=false;const STEP=1/120;let acc=0,hadDroid=false,lastPassed=-1;
+let callI=0,mission=false;const STEP=1/120;let acc=0,hadProbe=false,lastPassed=-1;
 function crash(){boom();thrustSound(false);crashY=S.y;lives--;drawLives();mode='dead';deadT=1.25;
   for(let i=0;i<14;i++){const a=Math.random()*6.28,v=40+Math.random()*150;frags.push({x:S.x,y:S.y,vx:Math.cos(a)*v+S.vx*.25,vy:Math.sin(a)*v+S.vy*.25,r:a,w:(Math.random()-.5)*9,s:3+Math.random()*6,l:1})}
   flash(lives>0?(lives===1?'Last ship':lives+' ships left'):'',1.3)}
@@ -413,7 +411,7 @@ function frame(now){requestAnimationFrame(frame);if(lastTime===null)lastTime=now
     if(readyT>0)readyT-=dt;else{acc+=dt;
       while(acc>=STEP&&mode==='play'){acc-=STEP;const ev=step(L,S,input,STEP);if(ev==='crash')crash();else if(ev==='win')win()}}
     thrustSound(mode==='play'&&input.thrust&&readyT<=0);
-    if(S.droid&&!hadDroid)droidBeeps();hadDroid=!!S.droid;
+    if(S.probe&&!hadProbe)probeBeeps();hadProbe=!!S.probe;
     if(!S.landed&&++trailN%3===0){trail.push({x:S.x,y:S.y});if(trail.length>46)trail.shift()}
     if(S.passed!==lastPassed){lastPassed=S.passed;$('count').innerHTML='<b>'+String(S.passed).padStart(3,'0')+'</b> / 100';
       }

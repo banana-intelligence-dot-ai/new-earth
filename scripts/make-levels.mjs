@@ -27,8 +27,8 @@ export function plan(n) {
     bodies: n < 6 ? 1 : n < 11 ? 2 : n < 26 ? 2 + (n % 2) : n < 46 ? 3 : n < 66 ? 4 : n < 86 ? 3 + (n % 2) : 4,
     movers: n < 26 ? 0 : n < 46 ? 1 : n < 66 ? 1 + (n % 2) : n < 86 ? n % 2 : 1 + (n % 2),
     blocker: true,
-    // things that do not pull but end the flight: asteroids from 16, a satellite from 36, the droid from 56
-    obst: [n >= 16 && 'asteroid', n >= 36 && 'sat', n >= 56 && 'droid', n >= 90 && 'asteroid'].filter(Boolean),
+    // things that do not pull but end the flight: asteroids from 16, a satellite from 36, the probe from 56
+    obst: [n >= 16 && 'asteroid', n >= 36 && 'sat', n >= 56 && 'probe', n >= 90 && 'asteroid'].filter(Boolean),
     targetR: Math.round(22 - 11 * f),
     mu: 1 + 0.6 * f,
     width: 5 * Math.pow(1 / 5, f),   // widest winning window, in degrees: 5 at level 1, 1 at level 100
@@ -115,7 +115,7 @@ function candidate(n, k) {
         if (cx - ring < 60 || cx + ring > 300 || cy - ring < 10 || cy + ring > H - 10) continue;
         if (!clear({ x: cx, y: cy, r: 7, ring }, 10)) continue;
         const p = R() * Math.PI * 2, w = (0.6 + R() * 0.7) * (R() < 0.5 ? -1 : 1);
-        c = { r: 7, mu: 0, type: 'droid', o: { cx: r1(cx), cy: r1(cy), r: r1(ring), p: Math.round(p * 100) / 100, w: Math.round(w * 100) / 100 } };
+        c = { r: 7, mu: 0, type: 'probe', o: { cx: r1(cx), cy: r1(cy), r: r1(ring), p: Math.round(p * 100) / 100, w: Math.round(w * 100) / 100 } };
       }
     }
     if (!c) return null;

@@ -201,14 +201,14 @@ const INTRO = {
   26: 'Some planets move now. They start when you launch.',
   36: 'A satellite circles one of the worlds. It starts moving when you launch.',
   46: 'Four worlds and a smaller target.',
-  56: 'A droid is loose out here. Do not hit it.',
+  56: 'A probe is loose out here. Do not hit it.',
   86: 'Everything at once.',
   100: 'A black hole sits in the way. Last one.',
 };
 const HOW = matchMedia('(pointer: coarse)').matches
   ? 'Pull back anywhere on the screen and let go. Fine tune with the buttons.'
   : 'Drag back and let go, or use the arrow keys and Space.';
-const NAME = { earth: 'Earth', moon: 'a moon', planet: 'a planet', sun: 'a sun', hole: 'the black hole', asteroid: 'an asteroid', sat: 'a satellite', droid: 'the droid' };
+const NAME = { earth: 'Earth', moon: 'a moon', planet: 'a planet', sun: 'a sun', hole: 'the black hole', asteroid: 'an asteroid', sat: 'a satellite', probe: 'the probe' };
 
 function setNote(text, dim) { const el = $('note'); el.textContent = text; el.classList.toggle('dim', !!dim); }
 function hud() {
@@ -356,21 +356,17 @@ function body(b, p) {
     ctx.strokeStyle = '#f2f2f2'; ctx.beginPath(); ctx.moveTo(-r * .45, 0); ctx.lineTo(-r * .95, 0); ctx.stroke();
     ctx.beginPath(); ctx.arc(-r, 0, r * .22, Math.PI * .5, Math.PI * 1.5); ctx.stroke();
     ctx.restore();
-  } else if (b.type === 'droid') {
-    // the droid from the classic game
-    const u = r / 21, WHT = '#eef1f4', BLU = '#2d5fd0', SIL = '#aab3bd';
+  } else if (b.type === 'probe') {
+    const u = r / 21, AMBER = '#f2a33a', DARK = '#14181d', CYAN = '#5fe1ff', GREY = '#aab3bd';
     ctx.save(); ctx.translate(x, y + 1); ctx.rotate(.3); ctx.scale(u, u); ctx.lineWidth = 1; ctx.strokeStyle = '#0a0a0a';
-    for (const k of [-1, 1]) {
-      ctx.fillStyle = WHT; ctx.fillRect(k * 13 - 3, -5, 6, 20); ctx.strokeRect(k * 13 - 3, -5, 6, 20); ctx.fillStyle = BLU; ctx.fillRect(k * 13 - 2, -1, 4, 9);
-      ctx.fillStyle = WHT; ctx.beginPath(); ctx.moveTo(k * 13 - 5, 19); ctx.lineTo(k * 13 - 3, 13); ctx.lineTo(k * 13 + 3, 13); ctx.lineTo(k * 13 + 5, 19); ctx.closePath(); ctx.fill(); ctx.stroke();
-    }
-    ctx.fillStyle = WHT; ctx.fillRect(-10, -6, 20, 22); ctx.strokeRect(-10, -6, 20, 22);
-    ctx.fillStyle = BLU; ctx.fillRect(-7, -3, 5, 3); ctx.fillRect(2, -3, 5, 3); ctx.fillRect(-7, 2, 14, 2); ctx.fillRect(-3, 6, 6, 8);
-    ctx.fillStyle = SIL; ctx.fillRect(-7, 6, 3, 8); ctx.fillRect(4, 6, 3, 8);
-    ctx.beginPath(); ctx.arc(0, -6, 10, Math.PI, 0); ctx.closePath(); ctx.fill(); ctx.stroke();
-    ctx.save(); ctx.beginPath(); ctx.arc(0, -6, 10, Math.PI, 0); ctx.clip(); ctx.fillStyle = BLU; ctx.fillRect(-10, -9, 20, 2.2); ctx.fillRect(-4, -15, 8, 4.5); ctx.restore();
-    ctx.fillStyle = '#0a0a0a'; ctx.beginPath(); ctx.arc(0, -12.6, 1.9, 0, 7); ctx.fill();
-    ctx.fillStyle = '#e23b3b'; ctx.beginPath(); ctx.arc(4.6, -8.2, 1, 0, 7); ctx.fill();
+    ctx.strokeStyle = GREY; ctx.lineWidth = 2;
+    for (const [sx, sy, ex, ey] of [[-5, 10, -11, 22], [0, 14, 0, 24], [5, 10, 11, 22]]) { ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey); ctx.stroke(); }
+    ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(1, -13); ctx.lineTo(5, -22); ctx.stroke();
+    ctx.fillStyle = '#e23b3b'; ctx.beginPath(); ctx.arc(5, -22, 1.7, 0, 7); ctx.fill(); ctx.strokeStyle = '#0a0a0a'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = AMBER; ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(9, -8); ctx.lineTo(9, 9); ctx.lineTo(0, 15); ctx.lineTo(-9, 9); ctx.lineTo(-9, -8); ctx.closePath(); ctx.fill(); ctx.stroke();
+    ctx.save(); ctx.clip(); ctx.fillStyle = GREY; ctx.fillRect(-9, 4, 18, 3); ctx.restore();
+    ctx.fillStyle = DARK; ctx.beginPath(); ctx.arc(0, -5, 5.5, 0, 7); ctx.fill();
+    ctx.fillStyle = CYAN; ctx.beginPath(); ctx.arc(-1.7, -7, 1.25, 0, 7); ctx.fill();
     ctx.restore();
   } else {
     ctx.fillStyle = '#a3a3a3'; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
