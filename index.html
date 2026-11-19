@@ -297,7 +297,8 @@ function makeStars(seed) {
 }
 // The canvas covers the whole screen. The 360 x 250 field is drawn as large as fits in the space
 // the header and controls leave free. view = that placement in CSS pixels: scale k, offset ox, oy.
-let view = { k: 1, ox: 0, oy: 0 };
+// On an upright screen (p) the field turns a quarter turn so the rocket flies up: field x runs up, field y runs right.
+let view = { k: 1, ox: 0, oy: 0, p: false };
 function fit() {
   const vw = innerWidth, vh = innerHeight, d = Math.min(3, window.devicePixelRatio || 1);
   const w = Math.round(vw * d), h = Math.round(vh * d);
@@ -305,10 +306,11 @@ function fit() {
   const ui = $('ui').getBoundingClientRect(), hd = $('top').getBoundingClientRect(), side = ui.top < vh / 3;
   const left = Math.max(8, document.querySelector('h1').getBoundingClientRect().left - 8);
   const top = hd.bottom, right = (side ? ui.left : vw - left + 8) - 8, bottom = (side ? vh : ui.top) - 8;
-  const k = Math.max(.2, Math.min((right - left) / W, (bottom - top) / H));
-  view = { k, ox: left + (right - left - k * W) / 2, oy: top + (bottom - top - k * H) / 2 };
+  const p = vh > vw, sw = p ? H : W, sh = p ? W : H;
+  const k = Math.max(.2, Math.min((right - left) / sw, (bottom - top) / sh));
+  view = { k, p, ox: left + (right - left - k * sw) / 2, oy: top + (bottom - top - k * sh) / 2 };
   const st = document.documentElement.style;
-  st.setProperty('--fx', view.ox + 'px'); st.setProperty('--fy', view.oy + 'px'); st.setProperty('--fw', k * W + 'px'); st.setProperty('--fh', k * H + 'px');
+  st.setProperty('--fx', view.ox + 'px'); st.setProperty('--fy', view.oy + 'px'); st.setProperty('--fw', k * sw + 'px'); st.setProperty('--fh', k * sh + 'px');
   draw();
 }
 function dots(pts, alpha, r) {
@@ -385,7 +387,8 @@ function draw() {
   const d = cv.width / innerWidth, k = view.k * d;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, cv.width, cv.height);
   for (const [x, y, r, a] of stars) { ctx.fillStyle = `rgba(242,242,242,${a})`; ctx.fillRect(x * cv.width, y * cv.height, r * k, r * k); }
-  ctx.setTransform(k, 0, 0, k, view.ox * d, view.oy * d);
+  if (view.p) ctx.setTransform(0, -k, k, 0, view.ox * d, (view.oy + view.k * W) * d);
+  else ctx.setTransform(k, 0, 0, k, view.ox * d, view.oy * d);
   // the edge of the field: a rocket that crosses it is lost
   ctx.strokeStyle = 'rgba(242,242,242,.12)'; ctx.lineWidth = .6; ctx.setLineDash([2, 5]); ctx.strokeRect(-OUT, -OUT, W + 2 * OUT, H + 2 * OUT); ctx.setLineDash([]);
   const t = S && mode !== 'wait' ? S.n * STEP : 0;
@@ -406,8 +409,13 @@ function draw() {
   ctx.restore();
   ctx.font = '600 7px ' + getComputedStyle(document.documentElement).getPropertyValue('--mono');
   ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(111,168,255,.95)';
-  const ly = T.y + T.r + 13 > H - 3 ? T.y - T.r - 8 : T.y + T.r + 13;
-  ctx.fillText('NEW EARTH', Math.min(W - 26, Math.max(26, T.x)), ly);
+  if (view.p) { // keep the label upright: undo the quarter turn at the planet
+    ctx.save(); ctx.translate(T.x, Math.min(H - 26, Math.max(26, T.y))); ctx.rotate(Math.PI / 2);
+    ctx.fillText('NEW EARTH', 0, T.x - T.r - 13 < 3 ? -T.r - 8 : T.r + 13); ctx.restore();
+  } else {
+    const ly = T.y + T.r + 13 > H - 3 ? T.y - T.r - 8 : T.y + T.r + 13;
+    ctx.fillText('NEW EARTH', Math.min(W - 26, Math.max(26, T.x)), ly);
+  }
   for (const b of L.b) body(b, bodyAt(b, t));
   if (mark) {
     ctx.strokeStyle = '#f2f2f2'; ctx.lineWidth = 1.6; ctx.lineCap = 'round'; ctx.beginPath();
@@ -432,7 +440,10 @@ function draw() {
 }
 
 // ---- aiming by pointer ----
-function at(e) { return { x: (e.clientX - view.ox) / view.k, y: (e.clientY - view.oy) / view.k, k: view.k }; }
+function at(e) {
+  const u = (e.clientX - view.ox) / view.k, v = (e.clientY - view.oy) / view.k;
+  return view.p ? { x: W - v, y: u, k: view.k } : { x: u, y: v, k: view.k };
+}
 function nearRocket(e) { const p = at(e); return Math.hypot(p.x - L.s.x, p.y - L.s.y) * p.k <= 48; }
 // The page does not scroll, so a finger can pull back from anywhere on the field.
 cv.addEventListener('touchstart', e => { if (mode === 'aim') e.preventDefault(); }, { passive: false });
