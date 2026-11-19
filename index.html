@@ -321,15 +321,16 @@ function dots(pts, a0, a1, r) {
     ctx.beginPath(); ctx.arc(pts[i], pts[i + 1], r, 0, 7); ctx.fill();
   }
 }
-// One ring that grows from r0 to r1 over 600 ms and settles at a faint ring (all of it at once under reduced motion).
+// One ring that grows from r0 to r1 over 600 ms and fades to nothing (not drawn at all under reduced motion).
 function ring(x, y, r0, r1, col, t0) {
-  const p = reduced.matches ? 1 : Math.min(1, (performance.now() - t0) / 600);
-  ctx.strokeStyle = col; ctx.globalAlpha = Math.max(.35, 1 - p); ctx.lineWidth = fl(1.2, 2);
+  const p = (performance.now() - t0) / 600;
+  if (reduced.matches || p <= 0 || p >= 1) return;
+  ctx.strokeStyle = col; ctx.globalAlpha = 1 - p; ctx.lineWidth = fl(1.2, 2);
   ctx.beginPath(); ctx.arc(x, y, r0 + (r1 - r0) * (1 - (1 - p) * (1 - p)), 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
 }
 function pulse() {
   cancelAnimationFrame(fxRaf); draw();
-  if (!reduced.matches && fx && performance.now() - fx.t0 < 600) fxRaf = requestAnimationFrame(pulse);
+  if (!reduced.matches && fx && performance.now() - fx.t0 < 800) fxRaf = requestAnimationFrame(pulse);
 }
 function body(b, p) {
   const { x, y } = p, r = b.r;
