@@ -2,8 +2,8 @@
 
 > A free browser game. Pull back and launch one rocket from Earth, with no steering, and let the gravity of moons, planets and suns bend its path to a new Earth. 100 levels that get harder: more bodies, heavier pull, moving planets, smaller targets, shots that must swing around a world, and a black hole at the end.
 
-- Play: https://new-earth-omega.vercel.app/
-- Classic mode, where you fly the rocket yourself past 100 bodies against a robot's time: https://new-earth-omega.vercel.app/classic/
+- Play: https://www.natepeace.com/games/new-earth/
+- Classic mode, where you fly the rocket yourself past 100 bodies against a robot's time: https://www.natepeace.com/games/new-earth/classic/
 - Every level is checked by a solver before it ships, so each one can be won.
 - Progress is stored only in the player's browser. Nothing is collected.
 - Made by Banana Intelligence LLC.
