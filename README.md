@@ -2,7 +2,7 @@
 
 A browser game. Pull back, launch one rocket from Earth, and let gravity bend it to a new Earth. No steering. 100 levels.
 
-**Play it:** https://new-earth-omega.vercel.app/
+**Play it:** https://www.natepeace.com/games/new-earth/ (the old address, https://new-earth-omega.vercel.app/, still plays)
 
 - **Play locally:** serve the folder (`python3 -m http.server`) and open it.
 - **Physics:** `sim.js`, shared by the page, the level maker and the test. Same gravity and step as the mini game on natepeace.com.
